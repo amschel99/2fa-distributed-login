@@ -43,13 +43,40 @@ ws["id"]=client_id;
 ws["ip"]=Ip;
 connected_clients.push(ws)
 
-  ws.on("message", (message) => {
+ws.on("message", (message) => {
     console.log("Received from client:", message);
-
-    
-    ws.send(`Server received: ${message}`);
+  
+    // Parse the incoming message
+    const parsedMessage = JSON.parse(message.toString());
+    const { event, data } = parsedMessage;
+  
+    switch (event) {
+      case "Join":
+        // Handle the "Join" event
+        const remainingClients = connected_clients.filter((client) => client.id !== client_id);
+        remainingClients.forEach((remainingClient) => {
+          remainingClient.send(
+            JSON.stringify({ event: "JoinNotification", data: `${client_id}, ${Ip} Joined the network` })
+          );
+        });
+        break;
+  
+      // Add more cases for other event types as needed
+      case "SignUpAck":
+        
+     connected_clients.forEach((notifyClient) => {
+          notifyClient.send(
+            JSON.stringify({ event: "SignUpAckNotification", data: `${client_id}, ${Ip} Succesfully registered the user` })
+          );
+        });
+        break;
+  
+      default:
+        console.warn(`Unknown event type: ${event}`);
+        break;
+    }
   });
-
+  
   
   ws.on("close", () => {
    
@@ -76,13 +103,13 @@ let server= httpServer.listen(PORT, () => {
   console.log(`HTTP server with WebSocket is running on http://localhost:${PORT}`);
 });
 
-server.on('upgrade',async function upgrade(request,socket,head){
+// server.on('upgrade',async function upgrade(request,socket,head){
 
-    //you can handle authentication here
-       //return socket.end('HTTP/1.1 401 Unauthorized\r\n','ascii')
+//     //you can handle authentication here
+//        //return socket.end('HTTP/1.1 401 Unauthorized\r\n','ascii')
     
-    wss.handleUpgrade(request,socket,head,function done(ws){
-       wss.emit("connection",ws,request)
+//     wss.handleUpgrade(request,socket,head,function done(ws){
+//        wss.emit("connection",ws,request)
     
-    })
-    })
+//     })
+//     })

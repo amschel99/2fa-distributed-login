@@ -14,27 +14,55 @@ app.use(express.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
 
-app.post("/credentials", (req: Request, res: Response) => {
-  store_credentials(req, res);
-});
+
 
 app.post("/credentials/verify", (req: Request, res: Response) => {
   verify_credentials(req, res);
 });
 
 
-const wsClient = new WebSocket("ws://external-websocket-server-address"); 
+const wsClient = new WebSocket("ws://localhost:8000"); 
 
 
 wsClient.on("open", () => {
   console.log("WebSocket client connected to the server");
-
-  wsClient.send("Hello from the client!");
+let message={event:"Join"}
+  wsClient.send(JSON.stringify(message));
 });
 
-wsClient.on("message", (data) => {
-  console.log("Received message from WebSocket server:", data);
-});
+wsClient.on("message", async (rawData) => {
+    const { event, data } = JSON.parse(rawData.toString());
+  
+    switch (event) {
+      case "Signup":
+    
+        console.log("Handling Signup event with data:", data);
+      let res= await  store_credentials(data.email, data.password)
+      if(res=="Credentials stored successfully"){
+        wsClient.send(JSON.stringify({event:"SignUpAck"}))
+        break;
+      }
+      else{
+        break;
+      }
+      case "JoinNotification":
+    console.log(data)
+   break;
+
+   case "SignUpAckNotification":
+    console.log(data)
+   break;
+      
+        
+  
+     
+  
+      default:
+        console.warn("Unhandled event type:", event);
+    }
+  
+    console.log("Received message from WebSocket server:", data);
+  });
 
 wsClient.on("close", () => {
   console.log("WebSocket client connection closed");
