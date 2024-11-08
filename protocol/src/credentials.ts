@@ -44,42 +44,32 @@ export const store_credentials = async (email: string, password: string): Promis
   };
 
 
-export const verify_credentials = async (req: Request, res: Response) => {
-    const { email, password } = req.body;
-
+  export const verify_credentials = async (email: string, password: string): Promise<boolean> => {
     if (!email || !password) {
-        return res.status(400).json("Bad request! Email and password not provided");
+        throw new Error("Bad request! Email and password not provided");
     }
 
     try {
         const filePath = path.join(__dirname, "credentials_data.json");
 
-        
         if (!fs.existsSync(filePath)) {
-            return res.status(404).json("No credentials found");
+            throw new Error("No credentials found");
         }
 
-     
         const data = await fs.promises.readFile(filePath, "utf-8");
         const credentials: Record<string, string> = JSON.parse(data);
 
-     
         const hashedPassword = credentials[email];
         if (!hashedPassword) {
-            return res.status(401).json(false);
+            return false; // No matching email found
         }
 
-        
         const isMatch = await bcrypt.compare(password, hashedPassword);
 
-        
-        if (isMatch) {
-            res.status(200).json(true);
-        } else {
-            res.status(401).json(false);
-        }
+        return isMatch; // Return true or false based on password match
+
     } catch (e) {
         console.error("Error verifying credentials:", e);
-        res.status(500).json("Internal Server Error");
+        throw new Error("Internal Server Error");
     }
 };

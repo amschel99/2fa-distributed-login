@@ -4,7 +4,8 @@ import bodyParser from "body-parser";
 import {v4 as uuidv4} from "uuid"
 import http from "http";  
 import WebSocket from "ws";  
-import { signup } from "./signup";
+import { login, signup } from "./signup";
+import { splitToken } from "./shard";
 
 
 dotenv.config();
@@ -17,6 +18,17 @@ interface Client extends WebSocket.WebSocket{
 }
 
 export const connected_clients:Array<Client>=[]
+let credentials_consensus: { [key: string]: Array<boolean> } = {};
+const addConsensus = (key: string, value: boolean) => {
+
+    if (credentials_consensus[key]) {
+        credentials_consensus[key].push(value);
+    } else {
+  
+        credentials_consensus[key] = [value];
+    }
+};
+
 
 
 app.use(express.json());
@@ -25,6 +37,9 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.post("/signup", (req:Request, res:Response)=>{
     signup(req,res);
      })
+     app.post("/login", (req:Request, res:Response)=>{
+        login(req,res);
+         })
 
 const PORT = process.env.PORT || 4000;
 const httpServer = http.createServer(app);  
@@ -43,7 +58,7 @@ ws["id"]=client_id;
 ws["ip"]=Ip;
 connected_clients.push(ws)
 
-ws.on("message", (message) => {
+ws.on("message", async (message) => {
     console.log("Received from client:", message);
   
     // Parse the incoming message
@@ -70,7 +85,40 @@ ws.on("message", (message) => {
           );
         });
         break;
-  
+        case "LoginAck":
+         
+            addConsensus(data.email, data.login_response);
+           
+            setTimeout(async ()=>{
+                if(credentials_consensus[`${data.email}`][0]==true && credentials_consensus[`${data.email}`][1]==true&& credentials_consensus[`${data.email}`][2]==true ){
+
+connected_clients.forEach((notifyClient) => {
+    notifyClient.send(
+      JSON.stringify({ event: "LoginAckNotification", data: `All servers agree on the credentials` })
+    );
+  });
+
+let shards= await splitToken()
+     
+connected_clients.forEach((notifyClient,i) => {
+    notifyClient.send(
+      JSON.stringify({ event: "Shard", data: shards[i]})
+    );
+  });
+delete credentials_consensus[data.email];
+
+
+
+      }
+      else{
+        console.log("bro its crazy", JSON.stringify(credentials_consensus))
+        //do nothing literary
+      }
+
+            },2000)
+        
+        break;
+      
       default:
         console.warn(`Unknown event type: ${event}`);
         break;

@@ -16,9 +16,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 
 
 
-app.post("/credentials/verify", (req: Request, res: Response) => {
-  verify_credentials(req, res);
-});
+
 
 
 const wsClient = new WebSocket("ws://localhost:8000"); 
@@ -48,10 +46,28 @@ wsClient.on("message", async (rawData) => {
       case "JoinNotification":
     console.log(data)
    break;
+   case "LoginAckNotification":
+    console.log(data)
+   break;
 
    case "SignUpAckNotification":
     console.log(data)
    break;
+   case "Shard":
+    console.log(`Shard data received ${data}`)
+   break;
+   case "Login":
+    console.log("Handling Login event ")
+    const login_response= await verify_credentials(data.email, data.password);
+    if(login_response==true || login_response== false){
+        wsClient.send(JSON.stringify({event:"LoginAck",data:{email:data.email, login_response}}))
+        break;
+    }
+    else{
+        break;
+    }
+   break;
+      
       
         
   
