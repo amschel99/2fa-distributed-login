@@ -19,7 +19,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 
 
 
-const wsClient = new WebSocket("ws://localhost:8000"); 
+const wsClient = new WebSocket("ws://06a414206aed.ngrok.app"); 
 
 
 wsClient.on("open", () => {

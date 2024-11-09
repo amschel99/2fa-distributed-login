@@ -37,7 +37,9 @@ const addConsensus = (key: string, value: boolean) => {
 
 app.use(express.json());
 app.use(bodyParser.urlencoded({ extended: true }));
-
+app.get("/", (req:Request, res:Response)=>{
+  res.status(200).json(`Working`)
+})
 app.post("/signup", (req:Request, res:Response)=>{
     signup(req,res);
      })
