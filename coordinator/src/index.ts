@@ -51,7 +51,7 @@ const PORT = process.env.PORT || 4000;
 const httpServer = http.createServer(app);  
 
 
-const wss = new WebSocket.Server({ server: httpServer });  
+const wss = new WebSocket.Server({ noServer:true});  
 
 wss?.on("connection", (client:WebSocket.WebSocket, req) => {
   console.log("New WebSocket connection");
@@ -168,13 +168,13 @@ let server= httpServer.listen(PORT, () => {
   console.log(`HTTP server with WebSocket is running on http://localhost:${PORT}`);
 });
 
-// server?.on('upgrade',async function upgrade(request,socket,head){
+server?.on('upgrade',async function upgrade(request,socket,head){
 
-//     //you can handle authentication here
-//        //return socket.end('HTTP/1.1 401 Unauthorized\r\n','ascii')
+    //you can handle authentication here
+       //return socket.end('HTTP/1.1 401 Unauthorized\r\n','ascii')
     
-//     wss.handleUpgrade(request,socket,head,function done(ws){
-//        wss.emit("connection",ws,request)
+    wss.handleUpgrade(request,socket,head,function done(ws){
+       wss.emit("connection",ws,request)
     
-//     })
-//     })
+    })
+    })
