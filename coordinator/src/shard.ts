@@ -7,7 +7,7 @@ dotenv.config();
 
 
 
-const AIRWALLEX_API_URL = "https://api-demo.airwallex.com/api/v1";
+
 
 export const splitToken = async ():Promise<Uint8Array[]>=> {
     try {
@@ -22,14 +22,14 @@ export const splitToken = async ():Promise<Uint8Array[]>=> {
   
     
       const token = authResponse.data.token as string;
-      console.log("Token (string):", token);
+ 
   
       const tokenUint8Array = new Uint8Array(Buffer.from(token, 'utf-8'));
   
      
-      
+      const [share1, share2, share3]= await split(tokenUint8Array, 3, 2);
   
-      return await split(tokenUint8Array, 3, 2);
+      return [share1, share2, share3]
     } catch (error) {
       console.error("Error splitting token:", error);
       throw new Error("Failed to split token");

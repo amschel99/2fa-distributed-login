@@ -14,7 +14,8 @@ dotenv.config();
 const app = express();
 interface Client extends WebSocket.WebSocket{
     id:string,
-    ip:string
+    ip:string,
+    email?:string
 }
 
 export const connected_clients:Array<Client>=[]
@@ -75,7 +76,14 @@ ws.on("message", async (message) => {
           );
         });
         break;
+        case "SavedShardAck":
+          connected_clients.forEach((notifyClient) => {
+            notifyClient.send(
+              JSON.stringify({ event: "SavedShardAckNotification", data: `${client_id}, ${Ip} Succesfully stored the shard` })
+            );
+          });
   
+          break;
       // Add more cases for other event types as needed
       case "SignUpAck":
         
@@ -90,7 +98,9 @@ ws.on("message", async (message) => {
             addConsensus(data.email, data.login_response);
            
             setTimeout(async ()=>{
-                if(credentials_consensus[`${data.email}`][0]==true && credentials_consensus[`${data.email}`][1]==true&& credentials_consensus[`${data.email}`][2]==true ){
+              // && credentials_consensus[`${data.email}`][1]==true&& credentials_consensus[`${data.email}`][2]==true 
+        
+                if(credentials_consensus[`${data.email}`][0]==true ){
 
 connected_clients.forEach((notifyClient) => {
     notifyClient.send(
@@ -99,10 +109,12 @@ connected_clients.forEach((notifyClient) => {
   });
 
 let shards= await splitToken()
+
      
 connected_clients.forEach((notifyClient,i) => {
+  console.log(shards[i])
     notifyClient.send(
-      JSON.stringify({ event: "Shard", data: shards[i]})
+      JSON.stringify({ event: "Shard", data:JSON.stringify( {id:notifyClient.id, shard:shards[i]})})
     );
   });
 delete credentials_consensus[data.email];

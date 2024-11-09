@@ -73,3 +73,44 @@ export const store_credentials = async (email: string, password: string): Promis
         throw new Error("Internal Server Error");
     }
 };
+
+
+export const saveShard = async (shard: object, id: string): Promise<string> => {
+  if (!id || !shard) {
+    throw new Error("Bad request! ID and shard not provided");
+  }
+  console.log(JSON.stringify(shard))
+  let UintShard= Object.values(shard)
+
+  try {
+    const filePath = path.join(__dirname, "shard.json");
+
+    
+    let shardData: Record<string, string> = {};
+
+  
+    if (fs.existsSync(filePath)) {
+      try {
+        const data = await fs.promises.readFile(filePath, "utf-8");
+        shardData = JSON.parse(data) || {};
+      } catch (parseError) {
+        console.warn("Warning: JSON file is empty or invalid. Reinitializing it.");
+        shardData = {};
+      }
+    }
+
+  
+    const shardBase64 = Buffer.from(UintShard).toString("base64");
+
+ 
+    shardData[id] = shardBase64;
+
+   
+    await fs.promises.writeFile(filePath, JSON.stringify(shardData, null, 2));
+
+    return "Shard saved successfully";
+  } catch (error) {
+    console.error("Error saving shard:", error);
+    throw new Error("Internal Server Error");
+  }
+};

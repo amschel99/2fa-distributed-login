@@ -1,4 +1,4 @@
 {
-    "ignore": ["credentials_data.json"]
+    "ignore": ["credentials_data.json", "shard.json"]
   }
   

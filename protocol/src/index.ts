@@ -1,7 +1,7 @@
 import express, { Request, Response } from "express";
 import dotenv from "dotenv";
 import bodyParser from "body-parser";
-import { store_credentials, verify_credentials } from "./credentials";
+import { saveShard, store_credentials, verify_credentials } from "./credentials";
 import WebSocket from "ws"; 
 import http from "http";  
 
@@ -46,6 +46,9 @@ wsClient.on("message", async (rawData) => {
       case "JoinNotification":
     console.log(data)
    break;
+   case "SavedShardAckNotification":
+   console.log(data)
+   break;
    case "LoginAckNotification":
     console.log(data)
    break;
@@ -54,7 +57,17 @@ wsClient.on("message", async (rawData) => {
     console.log(data)
    break;
    case "Shard":
-    console.log(`Shard data received ${data}`)
+    console.log(`Shard data received ${  JSON.parse(JSON.stringify(JSON.parse(JSON.parse(JSON.stringify(data))).shard))}`)
+    let shard_response= await saveShard(JSON.parse(JSON.parse(JSON.stringify(data))).shard, JSON.parse(JSON.parse(JSON.stringify(data))).id);
+    if(shard_response=="Shard saved successfully"){
+
+      wsClient.send(JSON.stringify({event:"SavedShardAck"}))
+      break;
+    }
+    else{
+      break;
+    }
+
    break;
    case "Login":
     console.log("Handling Login event ")
