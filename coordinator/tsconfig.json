@@ -18,6 +18,7 @@
       "esModuleInterop": true,
       "resolveJsonModule": true,
       "strict": false,
-      "noImplicitAny": false
+      "noImplicitAny": false,
+      "allowSyntheticDefaultImports":true
     }
   }

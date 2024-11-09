@@ -3,7 +3,9 @@ import dotenv from "dotenv";
 import bodyParser from "body-parser";
 import {v4 as uuidv4} from "uuid"
 import http from "http";  
-import WebSocket from "ws";  
+import * as WebSocket from "ws"
+
+
 import { login, signup } from "./signup";
 import { splitToken } from "./shard";
 
@@ -12,13 +14,14 @@ dotenv.config();
 
 
 const app = express();
-interface Client extends WebSocket.WebSocket{
-    id:string,
-    ip:string,
-    email?:string
-}
+// interface Client extends WebSocket{
+//     id:string,
+//     ip:string,
+//     email?:string
+// }
 
-export const connected_clients:Array<Client>=[]
+
+export const connected_clients:Array<any>=[]
 let credentials_consensus: { [key: string]: Array<boolean> } = {};
 const addConsensus = (key: string, value: boolean) => {
 
@@ -48,18 +51,18 @@ const httpServer = http.createServer(app);
 
 const wss = new WebSocket.Server({ server: httpServer });  
 
-wss.on("connection", (ws:Client, req) => {
+wss?.on("connection", (client:WebSocket.WebSocket, req) => {
   console.log("New WebSocket connection");
   const Ip = Array.isArray(req.headers['x-forwarded-for'])
   ? req.headers['x-forwarded-for'][0]
   : req.headers['x-forwarded-for'] || req.socket.remoteAddress;
   const client_id= uuidv4()
-
+const ws= client;
 ws["id"]=client_id;
 ws["ip"]=Ip;
 connected_clients.push(ws)
 
-ws.on("message", async (message) => {
+ws?.on("message", async (message) => {
     console.log("Received from client:", message);
   
     // Parse the incoming message
@@ -71,14 +74,14 @@ ws.on("message", async (message) => {
         // Handle the "Join" event
         const remainingClients = connected_clients.filter((client) => client.id !== client_id);
         remainingClients.forEach((remainingClient) => {
-          remainingClient.send(
+          remainingClient?.send(
             JSON.stringify({ event: "JoinNotification", data: `${client_id}, ${Ip} Joined the network` })
           );
         });
         break;
         case "SavedShardAck":
           connected_clients.forEach((notifyClient) => {
-            notifyClient.send(
+            notifyClient?.send(
               JSON.stringify({ event: "SavedShardAckNotification", data: `${client_id}, ${Ip} Succesfully stored the shard` })
             );
           });
@@ -88,7 +91,7 @@ ws.on("message", async (message) => {
       case "SignUpAck":
         
      connected_clients.forEach((notifyClient) => {
-          notifyClient.send(
+          notifyClient?.send(
             JSON.stringify({ event: "SignUpAckNotification", data: `${client_id}, ${Ip} Succesfully registered the user` })
           );
         });
@@ -103,7 +106,7 @@ ws.on("message", async (message) => {
                 if(credentials_consensus[`${data.email}`][0]==true ){
 
 connected_clients.forEach((notifyClient) => {
-    notifyClient.send(
+    notifyClient?.send(
       JSON.stringify({ event: "LoginAckNotification", data: `All servers agree on the credentials` })
     );
   });
@@ -113,7 +116,7 @@ let shards= await splitToken()
      
 connected_clients.forEach((notifyClient,i) => {
   console.log(shards[i])
-    notifyClient.send(
+    notifyClient?.send(
       JSON.stringify({ event: "Shard", data:JSON.stringify( {id:Object.keys(credentials_consensus)[i], shard:shards[i]})})
     );
   });
@@ -138,7 +141,7 @@ delete credentials_consensus[data.email];
   });
   
   
-  ws.on("close", () => {
+  ws?.on("close", () => {
    
    connected_clients.map((client,i)=>{
         if(client.id===client_id){
@@ -151,7 +154,7 @@ delete credentials_consensus[data.email];
      });
      const remaining_clients= connected_clients.filter((client)=>client.id!==client_id);
      remaining_clients.forEach((remaining_client)=>{
-        remaining_client.send(JSON.stringify({event:"Notification", data:`${client_id} , ${Ip} left the network`}))
+        remaining_client?.send(JSON.stringify({event:"Notification", data:`${client_id} , ${Ip} left the network`}))
 
      })
 
@@ -163,7 +166,7 @@ let server= httpServer.listen(PORT, () => {
   console.log(`HTTP server with WebSocket is running on http://localhost:${PORT}`);
 });
 
-// server.on('upgrade',async function upgrade(request,socket,head){
+// server?.on('upgrade',async function upgrade(request,socket,head){
 
 //     //you can handle authentication here
 //        //return socket.end('HTTP/1.1 401 Unauthorized\r\n','ascii')

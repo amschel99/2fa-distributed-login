@@ -33,3 +33,20 @@ This architecture aims to provide a distributed and secure method of storing and
 
 ##### P.S
 This library is used for shamir secret sharing, https://github.com/privy-io/shamir-secret-sharing
+### Running coordinator using docker
+```bash
+sudo docker-compose -f docker-compose.yml  build api
+```
+
+Then run,
+```bash
+sudo docker-compose -f docker-compose.yml  up -d
+
+```
+
+Interact with the container
+
+```bash
+sudo docker exec -it coordinator-api-1  bash
+
+```

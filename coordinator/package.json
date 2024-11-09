@@ -4,7 +4,7 @@
   "description": "Software that is run by all nodes in the coordinator node",
   "main": "dist/src/index.js",
   "scripts": {
-    "spin": "NODE_ENV=remote NODE_OPTIONS=--experimental-specifier-resolution=node  nodemon --exec  ts-node --esm src/index.ts && ./spin.sh "
+    "spin": "NODE_ENV=development NODE_OPTIONS=--experimental-specifier-resolution=node  nodemon --exec  ts-node --esm src/index.ts && ./spin.sh "
   },
   "author": "",
   "license": "ISC",
