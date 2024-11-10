@@ -4,7 +4,7 @@ import bodyParser from "body-parser";
 import {v4 as uuidv4} from "uuid"
 import http from "http";  
 import * as WebSocket from "ws"
-
+import { Server as SocketServer } from "socket.io";
 
 import { login, signup } from "./signup";
 import { recreateKey, splitToken } from "./shard";
@@ -77,6 +77,11 @@ recreateKey(req, res)
 
 const PORT = process.env.PORT || 4000;
 const httpServer = http.createServer(app);  
+
+export const io = new SocketServer(httpServer);
+io.on("connection", (socket) => {
+  socket.emit("newConnection", { message: "a new client connected" });
+});
 
 
 const wss = new WebSocket.Server({ noServer:true});  
