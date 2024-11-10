@@ -110,7 +110,7 @@ ws?.on("message", async (message) => {
           setTimeout(async ()=>{
             let shares_in_buffer=[]
             shard_pieces.map((shard_piece)=>{
-              shares_in_buffer.push(Buffer.from(shard_piece, "base64"));
+              shares_in_buffer.push(Array.from(Buffer.from(shard_piece, "base64")));
             })
             const reconstructed= await combine(shares_in_buffer);
             console.log(`Reconstructed Api key is ${reconstructed}`)
