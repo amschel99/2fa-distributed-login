@@ -220,19 +220,21 @@ delete credentials_consensus[data.email];
 });
 
 
+
+httpServer.on("upgrade", (request, socket, head) => {
+  if(request.url.startsWith("/client")){
+    //allow socket.io
+  }
+  else {
+    wss.handleUpgrade(request, socket, head, (ws) => {
+      wss.emit("connection", ws, request);
+    });
+  } 
+});
+
 let server= httpServer.listen(4000, () => {
   console.log(`HTTP server with WebSocket is running on http://localhost:${PORT}`);
 });
 setInterval(()=>{
   console.log(connected_clients.length)
 },2000)
-server?.on('upgrade',async function upgrade(request,socket,head){
-
-    //you can handle authentication here
-       //return socket.end('HTTP/1.1 401 Unauthorized\r\n','ascii')
-    
-    wss.handleUpgrade(request,socket,head,function done(ws){
-       wss.emit("connection",ws,request)
-    
-    })
-    })
