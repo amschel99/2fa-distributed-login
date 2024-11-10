@@ -78,7 +78,10 @@ recreateKey(req, res)
 const PORT = process.env.PORT || 4000;
 const httpServer = http.createServer(app);  
 
-export const io = new SocketServer(httpServer);
+export const io = new SocketServer(httpServer, { cors: {
+  origin: "*", 
+  methods: ["GET", "POST"], 
+},});
 io.on("connection", (socket) => {
   socket.emit("newConnection", { message: "a new client connected" });
 });
