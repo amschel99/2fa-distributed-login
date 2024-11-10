@@ -1,7 +1,7 @@
 import express, { Request, Response } from "express";
 import dotenv from "dotenv";
 import bodyParser from "body-parser";
-import { saveShard, store_credentials, verify_credentials } from "./credentials";
+import { getShard, saveShard, store_credentials, verify_credentials } from "./credentials";
 import WebSocket from "ws"; 
 import http from "http";  
 
@@ -56,6 +56,18 @@ wsClient.on("message", async (rawData) => {
    case "SignUpAckNotification":
     console.log(data)
    break;
+   case "RequestShards":
+    console.log(data)
+    let request_shard_response= await getShard(data);
+    if(request_shard_response){
+      wsClient.send(JSON.stringify({event:"ShardAck",data:request_shard_response}));
+      break;
+    }
+    else{
+      break;
+    }
+    //The data is an email
+    break;
    case "Shard":
    console.log("detected")
     let shard_response= await saveShard(JSON.parse(JSON.parse(JSON.stringify(data))).shard, JSON.parse(JSON.parse(JSON.stringify(data))).id);

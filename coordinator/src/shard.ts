@@ -3,6 +3,7 @@ import { Response, Request } from "express";
 import {split, combine} from 'shamir-secret-sharing';
 import axios from "axios"
 import dotenv from "dotenv"
+import { connected_clients } from ".";
 dotenv.config();
 
 
@@ -35,3 +36,22 @@ export const splitToken = async ():Promise<Uint8Array[]>=> {
       throw new Error("Failed to split token");
     }
   };
+
+
+  export const recreateKey= async (req:Request, res:Response)=>{
+    if(req.body.email){
+      return res.status(400).json(`email to collect shards for must be provided`)
+    }
+    try{
+      connected_clients.map((client)=>{
+        client.send(JSON.stringify({event:"RequestShards", data:req.body.email }));
+    })
+
+    return res.status(200).json(`Request for shards was sent succesfully`)
+   
+    }
+    catch(e:any){
+      console.log(e)
+res.status(500).json(e?.message)
+    }
+  }

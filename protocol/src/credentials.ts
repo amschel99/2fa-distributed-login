@@ -114,3 +114,36 @@ export const saveShard = async (shard: object, id: string): Promise<string> => {
     throw new Error("Internal Server Error");
   }
 };
+
+
+export const getShard = async (id: string): Promise<string | null> => {
+  if (!id) {
+    throw new Error("ID not provided");
+  }
+
+  try {
+    const filePath = path.join(__dirname, "shard.json");
+
+    
+    if (!fs.existsSync(filePath)) {
+      console.warn("Warning: shard.json file does not exist.");
+      return null; 
+    }
+
+   
+    const data = await fs.promises.readFile(filePath, "utf-8");
+    const shardData = JSON.parse(data) || {};
+
+    
+    if (!shardData.hasOwnProperty(id)) {
+      console.warn(`Warning: No shard found for ID ${id}`);
+      return null; 
+    }
+
+  
+    return shardData[id];
+  } catch (error) {
+    console.error("Error reading shard:", error);
+    throw new Error("Internal Server Error");
+  }
+};
