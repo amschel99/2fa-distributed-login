@@ -39,7 +39,7 @@ export const splitToken = async ():Promise<Uint8Array[]>=> {
 
 
   export const recreateKey= async (req:Request, res:Response)=>{
-    if(req.body.email){
+    if(!req.body.email){
       return res.status(400).json(`email to collect shards for must be provided`)
     }
     try{
