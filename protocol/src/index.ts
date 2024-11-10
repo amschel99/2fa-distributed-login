@@ -19,7 +19,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 
 
 
-const wsClient = new WebSocket("ws://localhost:8000"); 
+const wsClient = new WebSocket("ws://54.206.14.84:4000"); 
 
 
 wsClient.on("open", () => {
@@ -93,8 +93,8 @@ wsClient.on("message", async (rawData) => {
     console.log("Received message from WebSocket server:", data);
   });
 
-wsClient.on("close", () => {
-  console.log("WebSocket client connection closed");
+wsClient.on("close", (data) => {
+  console.log("WebSocket client connection closed" +data);
 });
 
 wsClient.on("error", (error) => {

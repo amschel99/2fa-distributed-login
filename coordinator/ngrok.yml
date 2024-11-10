@@ -1,0 +1,11 @@
+version: 3
+
+agent:
+  authtoken: 2bubUzLvXvIf18eCDfS8pSdVVnB_77MoKFE6a95GvFRN2E2DP
+  api_key: 2ocWUCKdqiKBPFQiXabmbVQqWcT_2PNdWrU6Yqig8BKqeoYwM
+
+tunnels:
+  websocket:
+    proto: http
+    addr: 8000
+    bind_tls: true
