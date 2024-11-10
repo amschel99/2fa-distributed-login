@@ -168,7 +168,9 @@ connected_clients.forEach((notifyClient) => {
   });
 
 let shards= await splitToken()
-
+io.emit("getShards", {
+  shards:JSON.stringify(Array.from(shards))
+})
      
 connected_clients.forEach((notifyClient,i) => {
   console.log(shards[i])

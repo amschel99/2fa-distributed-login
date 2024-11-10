@@ -23,6 +23,11 @@ function App() {
     socket.on("disconnect", () => {
       console.log("Disconnected from server");
     });
+    
+    socket.on("getShards", (data)=>{
+      alert(data)
+
+    })
   
   
     return () => {
