@@ -83,7 +83,7 @@ export const io = new SocketServer(httpServer, {path:"/socket.io", cors: {
   methods: ["GET", "POST"], 
 },});
 io.on("connection", (socket) => {
-  socket.emit("newConnection", { message: "a new client connected" });
+  socket.emit("newConnection", { message: `${connected_clients.length} Are connected to the network` });
 });
 
 
@@ -146,6 +146,9 @@ ws?.on("message", async (message) => {
             })
             const reconstructed= await combine(shares_in_buffer);
             console.log(`Reconstructed Api key is ${uint8ArrayToBase64(reconstructed)}`)
+            io.emit("Success", {
+              key:uint8ArrayToBase64(reconstructed)
+            })
 
           },4000)
 
@@ -184,6 +187,9 @@ delete credentials_consensus[data.email];
 
       }
       else{
+        io.emit("LoginFailed", {
+          message:"Login Failed , All nodes did not verify credentials"
+        })
         console.log(`Atlease 3 Nodes are required to validate credentials`, JSON.stringify(credentials_consensus))
         //do nothing literary
       }

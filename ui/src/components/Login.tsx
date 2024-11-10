@@ -2,8 +2,8 @@ import React, { useState } from 'react';
 import { TextField, Button, Typography, Box, Container, Snackbar, Alert } from '@mui/material';
 import axios from 'axios';
 
-const Login: React.FC = () => {
-  const [email, setEmail] = useState<string>('');
+const Login = ({email,setEmail}:any) => {
+ 
   const [password, setPassword] = useState<string>('');
   const [openSnackbar, setOpenSnackbar] = useState<boolean>(false);
   const [snackbarMessage, setSnackbarMessage] = useState<string>('');
@@ -29,14 +29,10 @@ const Login: React.FC = () => {
 
       // Check if signup was successful
       if (response.status === 200) {
-        setSnackbarMessage('Login Successful!');
-        setSnackbarSeverity('success');
-        setOpenSnackbar(true);
+    
       }
     } catch (error) {
-      setSnackbarMessage('Login Failed. Please try again.');
-      setSnackbarSeverity('error');
-      setOpenSnackbar(true);
+      
     }
   };
 
