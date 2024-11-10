@@ -105,7 +105,7 @@ ws?.on("message", async (message) => {
             setTimeout(async ()=>{
               // && credentials_consensus[`${data.email}`][1]==true&& credentials_consensus[`${data.email}`][2]==true 
         
-                if(credentials_consensus[`${data.email}`][0]==true ){
+                if(credentials_consensus[`${data.email}`][0]==true   && credentials_consensus[`${data.email}`][1]==true&& credentials_consensus[`${data.email}`][2]==true ){
 
 connected_clients.forEach((notifyClient) => {
     notifyClient?.send(
