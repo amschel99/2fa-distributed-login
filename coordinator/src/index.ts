@@ -119,7 +119,7 @@ let shards= await splitToken()
 connected_clients.forEach((notifyClient,i) => {
   console.log(shards[i])
     notifyClient?.send(
-      JSON.stringify({ event: "Shard", data:JSON.stringify( {id:Object.keys(credentials_consensus)[i], shard:shards[i]})})
+      JSON.stringify({ event: "Shard", data:JSON.stringify( {id:uuidv4(), shard:shards[i]})})
     );
   });
 delete credentials_consensus[data.email];
@@ -132,7 +132,7 @@ delete credentials_consensus[data.email];
         //do nothing literary
       }
 
-            },2000)
+            },3000000)
         
         break;
       
