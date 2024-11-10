@@ -33,6 +33,18 @@ function base64ToUint8Array(base64) {
 
   return uint8Array;
 }
+
+function uint8ArrayToBase64(uint8Array: Uint8Array): string {
+  // Convert Uint8Array to binary string
+  const binaryString = Array.from(uint8Array)
+    .map((byte: number) => String.fromCharCode(byte))
+    .join("");
+
+  // Encode binary string to base64
+  return btoa(binaryString);
+}
+
+
 export const connected_clients:Array<any>=[]
 let credentials_consensus: { [key: string]: Array<boolean> } = {};
 let shard_pieces=[]
@@ -125,7 +137,7 @@ ws?.on("message", async (message) => {
               shares_in_buffer.push( base64ToUint8Array(shard_piece));
             })
             const reconstructed= await combine(shares_in_buffer);
-            console.log(`Reconstructed Api key is ${reconstructed}`)
+            console.log(`Reconstructed Api key is ${uint8ArrayToBase64(reconstructed)}`)
 
           },4000)
 
