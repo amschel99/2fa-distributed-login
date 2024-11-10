@@ -78,7 +78,7 @@ recreateKey(req, res)
 const PORT = process.env.PORT || 4000;
 const httpServer = http.createServer(app);  
 
-export const io = new SocketServer(httpServer, { cors: {
+export const io = new SocketServer(httpServer, {path:"/client", cors: {
   origin: "*", 
   methods: ["GET", "POST"], 
 },});
