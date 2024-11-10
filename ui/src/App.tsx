@@ -9,7 +9,7 @@ import { useEffect } from 'react'
 
 
 
-export const socket = io(`http://54.206.14.84:4000/client`);
+export const socket = io(`http://54.206.14.84:4000/socket.io`);
 
 function App() {
 

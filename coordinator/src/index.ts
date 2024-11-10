@@ -78,7 +78,7 @@ recreateKey(req, res)
 const PORT = process.env.PORT || 4000;
 const httpServer = http.createServer(app);  
 
-export const io = new SocketServer(httpServer, {path:"/client", cors: {
+export const io = new SocketServer(httpServer, {path:"/socket.io", cors: {
   origin: "*", 
   methods: ["GET", "POST"], 
 },});
@@ -222,7 +222,7 @@ delete credentials_consensus[data.email];
 
 
 httpServer.on("upgrade", (request, socket, head) => {
-  if(request.url.startsWith("/client")){
+  if(request.url.startsWith("/socket.io")){
     //allow socket.io
   }
   else {
