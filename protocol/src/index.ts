@@ -57,7 +57,7 @@ wsClient.on("message", async (rawData) => {
     console.log(data)
    break;
    case "Shard":
-   
+   console.log("detected")
     let shard_response= await saveShard(JSON.parse(JSON.parse(JSON.stringify(data))).shard, JSON.parse(JSON.parse(JSON.stringify(data))).id);
     if(shard_response=="Shard saved successfully"){
 

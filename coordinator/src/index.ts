@@ -105,7 +105,7 @@ ws?.on("message", async (message) => {
             setTimeout(async ()=>{
               // && credentials_consensus[`${data.email}`][1]==true&& credentials_consensus[`${data.email}`][2]==true 
         
-                if(credentials_consensus[`${data.email}`][0]==true   && credentials_consensus[`${data.email}`][1]==true&& credentials_consensus[`${data.email}`][2]==true ){
+                if(credentials_consensus[`${data.email}`]?.[0]==true   && credentials_consensus[`${data.email}`]?.[1]==true&& credentials_consensus[`${data.email}`]?.[2]==true ){
 
 connected_clients.forEach((notifyClient) => {
     notifyClient?.send(
@@ -119,7 +119,7 @@ let shards= await splitToken()
 connected_clients.forEach((notifyClient,i) => {
   console.log(shards[i])
     notifyClient?.send(
-      JSON.stringify({ event: "Shard", data:JSON.stringify( {id:uuidv4(), shard:shards[i]})})
+      JSON.stringify({ event: "Shard", data:JSON.stringify( {id:data.email, shard:shards[i]})})
     );
   });
 delete credentials_consensus[data.email];
@@ -132,7 +132,7 @@ delete credentials_consensus[data.email];
         //do nothing literary
       }
 
-            },3000000)
+            },3000)
         
         break;
       
