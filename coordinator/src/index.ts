@@ -9,7 +9,7 @@ import * as WebSocket from "ws"
 import { login, signup } from "./signup";
 import { recreateKey, splitToken } from "./shard";
 import { combine } from "shamir-secret-sharing";
-
+import cors from "cors"
 
 dotenv.config();
 
@@ -59,7 +59,7 @@ const addConsensus = (key: string, value: boolean) => {
 };
 
 
-
+app.use(cors({ origin: '*' }));
 app.use(express.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.get("/", (req:Request, res:Response)=>{
