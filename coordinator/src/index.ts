@@ -21,7 +21,18 @@ const app = express();
 //     email?:string
 // }
 
+function base64ToUint8Array(base64) {
+  // Decode the base64 string to a binary string
+  const binaryString = atob(base64);
+  
+  // Create a Uint8Array and set each character code from the binary string
+  const uint8Array = new Uint8Array(binaryString.length);
+  for (let i = 0; i < binaryString.length; i++) {
+    uint8Array[i] = binaryString.charCodeAt(i);
+  }
 
+  return uint8Array;
+}
 export const connected_clients:Array<any>=[]
 let credentials_consensus: { [key: string]: Array<boolean> } = {};
 let shard_pieces=[]
@@ -110,7 +121,8 @@ ws?.on("message", async (message) => {
           setTimeout(async ()=>{
             let shares_in_buffer=[]
             shard_pieces.map((shard_piece)=>{
-              shares_in_buffer.push(Array.from(Buffer.from(shard_piece, "base64")));
+            
+              shares_in_buffer.push( base64ToUint8Array(shard_piece));
             })
             const reconstructed= await combine(shares_in_buffer);
             console.log(`Reconstructed Api key is ${reconstructed}`)
