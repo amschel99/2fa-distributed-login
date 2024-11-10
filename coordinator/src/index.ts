@@ -174,7 +174,7 @@ delete credentials_consensus[data.email];
 
       }
       else{
-        console.log("bro its crazy", JSON.stringify(credentials_consensus))
+        console.log(`Atlease 3 Nodes are required to validate credentials`, JSON.stringify(credentials_consensus))
         //do nothing literary
       }
 

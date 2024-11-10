@@ -24,11 +24,17 @@ export const splitToken = async ():Promise<Uint8Array[]>=> {
     
       const token = authResponse.data.token as string;
  console.log(`Our token is ${token}`)
-  
-      const tokenUint8Array = new Uint8Array(Buffer.from(token, 'utf-8'));
+ let decoded_string= atob(token)
+ const uint8Array = new Uint8Array(decoded_string.length);
+for (let i = 0; i < decoded_string.length; i++) {
+  uint8Array[i] = decoded_string.charCodeAt(i);
+}
+
   
      
-      const [share1, share2, share3]= await split(tokenUint8Array, 3, 2);
+  
+     
+      const [share1, share2, share3]= await split(uint8Array, 3, 2);
   
       return [share1, share2, share3]
     } catch (error) {
