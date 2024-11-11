@@ -149,7 +149,7 @@ ws?.on("message", async (message) => {
         });
         break;
         case "ShardAck":
-          shard_pieces=[]
+         
           console.log(`The shard from ${client_id } of IP adress: ${Ip} is ${data}`);
           shard_pieces.push(data)
           //After 4 seconds The shardpieces list will have all the shards
