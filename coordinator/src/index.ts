@@ -78,28 +78,14 @@ recreateKey(req, res)
 const PORT = process.env.PORT || 4000;
 const httpServer = http.createServer(app);  
 
-export const io = new SocketServer(httpServer, {path:"/socket.io", cors: {
+export const io = new SocketServer(httpServer, {path:"/client", cors: {
   origin: "*", 
   methods: ["GET", "POST"], 
 },});
 io.on("connection", (socket) => {
-  socket.emit("newConnection", { message: connected_clients });
-  socket.on("removeNode", (data)=>{
-    console.log(`Request to remove node was sent ${data}`)
-    //data.node
-    connected_clients.map((client,i)=>{
-      if(client.id===data.node){
-   
-       connected_clients.splice(i,1)
-      
-       
-      }
-    
-   });
-  
-  })
-  
+  socket.emit("newConnection", { message: "a new client connected" });
 });
+
 
 const wss = new WebSocket.Server({ noServer:true});  
 
@@ -160,9 +146,6 @@ ws?.on("message", async (message) => {
             })
             const reconstructed= await combine(shares_in_buffer);
             console.log(`Reconstructed Api key is ${uint8ArrayToBase64(reconstructed)}`)
-            io.emit("Success", {
-              key:uint8ArrayToBase64(reconstructed)
-            })
 
           },4000)
 
@@ -172,7 +155,6 @@ ws?.on("message", async (message) => {
         case "LoginAck":
          
             addConsensus(data.email, data.login_response);
-            io.emit("LoginResponse", credentials_consensus)
            
             setTimeout(async ()=>{
               // && credentials_consensus[`${data.email}`][1]==true&& credentials_consensus[`${data.email}`][2]==true 
@@ -202,9 +184,6 @@ delete credentials_consensus[data.email];
 
       }
       else{
-        io.emit("LoginFailed", {
-          message:"Login Failed , All nodes did not verify credentials"
-        })
         console.log(`Atlease 3 Nodes are required to validate credentials`, JSON.stringify(credentials_consensus))
         //do nothing literary
       }
@@ -243,7 +222,7 @@ delete credentials_consensus[data.email];
 
 
 httpServer.on("upgrade", (request, socket, head) => {
-  if(request.url.startsWith("/socket.io")){
+  if(request.url.startsWith("/client")){
     //allow socket.io
   }
   else {
