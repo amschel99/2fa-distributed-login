@@ -29,7 +29,7 @@ const SignupForm: React.FC = () => {
 
       // Check if signup was successful
       if (response.status === 200) {
-        setSnackbarMessage('Signup Successful!');
+        setSnackbarMessage('Signup Successful! Go to login and use the credentials to log in');
         setSnackbarSeverity('success');
         setOpenSnackbar(true);
       }

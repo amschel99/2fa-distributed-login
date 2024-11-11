@@ -83,8 +83,22 @@ export const io = new SocketServer(httpServer, {path:"/socket.io", cors: {
   methods: ["GET", "POST"], 
 },});
 io.on("connection", (socket) => {
-  socket.emit("newConnection", { message: `${connected_clients.length} Are connected to the network` });
+  socket.emit("newConnection", { message: connected_clients });
 });
+
+io.on("removeNode", (data)=>{
+  //data.node
+  connected_clients.map((client,i)=>{
+    if(client.id===data.node){
+ 
+     connected_clients.splice(i,1)
+    
+     
+    }
+  
+ });
+
+})
 
 
 const wss = new WebSocket.Server({ noServer:true});  

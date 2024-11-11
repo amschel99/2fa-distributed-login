@@ -32,7 +32,7 @@ function App() {
   const [connection_status, setConnection_status] = useState("No servers connected");
   const [shards, setShards] = useState<any[]>([]);  // Typing shards as an array of any objects
   const [hashes, setHashes] = useState<string[]>([]); // State to store an array of SHA-256 hashes
-  const [loginFailed, setLoginFailed] = useState("");
+
   const [success, setSuccess] = useState("");
 
   useEffect(() => {
@@ -50,8 +50,8 @@ function App() {
     socket.on("Success", (data) => {
       setSuccess(data.key);
     });
-    socket.on("LoginFailed", (data) => {
-      setLoginFailed(data.message);
+    socket.on("LoginFailed", () => {
+     //
     });
     socket.on("getShards", (data) => {
       setShards(JSON.parse(data?.shards));
@@ -99,11 +99,11 @@ function App() {
         console.log('Shards reconstructed successfully:', data);
         setSuccess('API Key reconstructed successfully');
       } else {
-        setLoginFailed('Failed to reconstruct API key');
+       //
       }
     } catch (error) {
       console.error('Error during API key reconstruction:', error);
-      setLoginFailed('An error occurred while reconstructing API key');
+     //
     }
   };
 
@@ -131,8 +131,7 @@ function App() {
         ) : (
           <p>Waiting for shards data...</p>
         )}
-
-        <p style={{ color: "red" }}>{loginFailed}</p>
+      
         {hashes?.length > 1 && (
           <>
             <button onClick={handleReconstructAPIKey}>Reconstruct API key using the shards</button>
