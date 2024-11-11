@@ -4,11 +4,12 @@ import bodyParser from "body-parser";
 import {v4 as uuidv4} from "uuid"
 import http from "http";  
 import * as WebSocket from "ws"
-
+import { Server as SocketServer } from "socket.io";
 
 import { login, signup } from "./signup";
-import { splitToken } from "./shard";
-
+import { recreateKey, splitToken } from "./shard";
+import { combine } from "shamir-secret-sharing";
+import cors from "cors"
 
 dotenv.config();
 
@@ -20,9 +21,33 @@ const app = express();
 //     email?:string
 // }
 
+function base64ToUint8Array(base64) {
+  // Decode the base64 string to a binary string
+  const binaryString = atob(base64);
+  
+  // Create a Uint8Array and set each character code from the binary string
+  const uint8Array = new Uint8Array(binaryString.length);
+  for (let i = 0; i < binaryString.length; i++) {
+    uint8Array[i] = binaryString.charCodeAt(i);
+  }
+
+  return uint8Array;
+}
+
+function uint8ArrayToBase64(uint8Array: Uint8Array): string {
+  // Convert Uint8Array to binary string
+  const binaryString = Array.from(uint8Array)
+    .map((byte: number) => String.fromCharCode(byte))
+    .join("");
+
+  // Encode binary string to base64
+  return btoa(binaryString);
+}
+
 
 export const connected_clients:Array<any>=[]
 let credentials_consensus: { [key: string]: Array<boolean> } = {};
+let shard_pieces=[]
 const addConsensus = (key: string, value: boolean) => {
 
     if (credentials_consensus[key]) {
@@ -34,7 +59,7 @@ const addConsensus = (key: string, value: boolean) => {
 };
 
 
-
+app.use(cors({ origin: '*' }));
 app.use(express.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.get("/", (req:Request, res:Response)=>{
@@ -46,9 +71,34 @@ app.post("/signup", (req:Request, res:Response)=>{
      app.post("/login", (req:Request, res:Response)=>{
         login(req,res);
          })
+         app.post("/request-shards", (req:Request, res:Response)=>{
+recreateKey(req, res)
+         })
 
 const PORT = process.env.PORT || 4000;
 const httpServer = http.createServer(app);  
+
+export const io = new SocketServer(httpServer, {path:"/socket.io", cors: {
+  origin: "*", 
+  methods: ["GET", "POST"], 
+},});
+io.on("connection", (socket) => {
+  socket.emit("newConnection", { message: connected_clients });
+});
+
+io.on("removeNode", (data)=>{
+  //data.node
+  connected_clients.map((client,i)=>{
+    if(client.id===data.node){
+ 
+     connected_clients.splice(i,1)
+    
+     
+    }
+  
+ });
+
+})
 
 
 const wss = new WebSocket.Server({ noServer:true});  
@@ -98,6 +148,27 @@ ws?.on("message", async (message) => {
           );
         });
         break;
+        case "ShardAck":
+          console.log(`The shard from ${client_id } of IP adress: ${Ip} is ${data}`);
+          shard_pieces.push(data)
+          //After 4 seconds The shardpieces list will have all the shards
+          setTimeout(async ()=>{
+            let shares_in_buffer=[]
+            shard_pieces.map((shard_piece)=>{
+            
+              shares_in_buffer.push( base64ToUint8Array(shard_piece));
+            })
+            const reconstructed= await combine(shares_in_buffer);
+            console.log(`Reconstructed Api key is ${uint8ArrayToBase64(reconstructed)}`)
+            io.emit("Success", {
+              key:uint8ArrayToBase64(reconstructed)
+            })
+
+          },4000)
+
+          //data is just a shard string
+
+          break;
         case "LoginAck":
          
             addConsensus(data.email, data.login_response);
@@ -114,7 +185,9 @@ connected_clients.forEach((notifyClient) => {
   });
 
 let shards= await splitToken()
-
+io.emit("getShards", {
+  shards:JSON.stringify(Array.from(shards))
+})
      
 connected_clients.forEach((notifyClient,i) => {
   console.log(shards[i])
@@ -128,7 +201,10 @@ delete credentials_consensus[data.email];
 
       }
       else{
-        console.log("bro its crazy", JSON.stringify(credentials_consensus))
+        io.emit("LoginFailed", {
+          message:"Login Failed , All nodes did not verify credentials"
+        })
+        console.log(`Atlease 3 Nodes are required to validate credentials`, JSON.stringify(credentials_consensus))
         //do nothing literary
       }
 
@@ -164,19 +240,21 @@ delete credentials_consensus[data.email];
 });
 
 
+
+httpServer.on("upgrade", (request, socket, head) => {
+  if(request.url.startsWith("/socket.io")){
+    //allow socket.io
+  }
+  else {
+    wss.handleUpgrade(request, socket, head, (ws) => {
+      wss.emit("connection", ws, request);
+    });
+  } 
+});
+
 let server= httpServer.listen(4000, () => {
   console.log(`HTTP server with WebSocket is running on http://localhost:${PORT}`);
 });
 setInterval(()=>{
   console.log(connected_clients.length)
 },2000)
-server?.on('upgrade',async function upgrade(request,socket,head){
-
-    //you can handle authentication here
-       //return socket.end('HTTP/1.1 401 Unauthorized\r\n','ascii')
-    
-    wss.handleUpgrade(request,socket,head,function done(ws){
-       wss.emit("connection",ws,request)
-    
-    })
-    })
