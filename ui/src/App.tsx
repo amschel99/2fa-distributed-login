@@ -50,7 +50,7 @@ function App() {
       }
     });
     
-    setSuccess(`The response from the API is ${JSON.stringify(response.data)}`); // Access response data
+    setSuccess(data.key); // Access response data
     
   });
     socket.on("getShards", (data) => setShards(JSON.parse(data?.shards)));
