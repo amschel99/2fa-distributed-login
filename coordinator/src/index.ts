@@ -87,6 +87,7 @@ io.on("connection", (socket) => {
 });
 
 io.on("removeNode", (data)=>{
+  console.log(`Request to remove node was sent ${data}`)
   //data.node
   connected_clients.map((client,i)=>{
     if(client.id===data.node){

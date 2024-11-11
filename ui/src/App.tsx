@@ -11,53 +11,34 @@ function objectToHex(obj: { [x: string]: any }) {
   let hexString = "";
   for (let key in obj) {
     const value = obj[key];
-    hexString += value.toString(16).padStart(2, '0'); // Convert each byte to a 2-digit hex value
+    hexString += value.toString(16).padStart(2, '0');
   }
   return hexString;
 }
 
 async function sha256Hex(data: string | undefined) {
-  if (!data) return ''; // Return empty string if no data is provided
+  if (!data) return '';
   const encoder = new TextEncoder();
-  const dataBuffer = encoder.encode(data); // Convert the hex string to a Uint8Array
+  const dataBuffer = encoder.encode(data);
   const hashBuffer = await crypto.subtle.digest('SHA-256', dataBuffer);
-  
-  // Convert hash buffer to hex string
   const hashArray = Array.from(new Uint8Array(hashBuffer));
   return hashArray.map(byte => byte.toString(16).padStart(2, '0')).join('');
 }
 
 function App() {
   const [email, setEmail] = useState("");
-  const [connection_status, setConnection_status] = useState("No servers connected");
-  const [shards, setShards] = useState<any[]>([]);  // Typing shards as an array of any objects
-  const [hashes, setHashes] = useState<string[]>([]); // State to store an array of SHA-256 hashes
-
+  const [connectionStatus, setConnectionStatus] = useState([]);
+  const [shards, setShards] = useState<any[]>([]);
+  const [hashes, setHashes] = useState<string[]>([]);
   const [success, setSuccess] = useState("");
+  const [turnedOffNodes, setTurnedOffNodes] = useState<Set<string>>(new Set());
 
   useEffect(() => {
-    socket.on("connect", () => {
-      console.log("Connected to server");
-    });
-
-    socket.on("disconnect", () => {
-      console.log("Disconnected from server");
-    });
-
-    socket.on("newConnection", (data) => {
-      setConnection_status(JSON.stringify(data));
-    });
-    socket.on("Success", (data) => {
-      setSuccess(data.key);
-    });
-    socket.on("LoginFailed", () => {
-     //
-    });
-    socket.on("getShards", (data) => {
-      setShards(JSON.parse(data?.shards));
-      console.log('Shards received:', data); // Added for debugging
-    });
-
+    socket.on("connect", () => console.log("Connected to server"));
+    socket.on("disconnect", () => console.log("Disconnected from server"));
+    socket.on("newConnection", (data) => setConnectionStatus(data.message));
+    socket.on("Success", (data) => setSuccess(data.key));
+    socket.on("getShards", (data) => setShards(JSON.parse(data?.shards)));
     return () => {
       socket.off("connect");
       socket.off("disconnect");
@@ -65,51 +46,62 @@ function App() {
   }, []);
 
   useEffect(() => {
-    // Ensure shards data is valid
     if (shards.length > 0) {
       const hashesArray: string[] = [];
-
-      // Loop through each shard and generate its hash
       shards.forEach((obj) => {
-        const hexString = objectToHex(obj);  // Convert object to hex
+        const hexString = objectToHex(obj);
         sha256Hex(hexString).then((calculatedHash) => {
-          hashesArray.push(calculatedHash);  // Store the hash for each shard
+          hashesArray.push(calculatedHash);
           if (hashesArray.length === shards.length) {
-            setHashes(hashesArray);  // Set the state with all the hashes when all are computed
+            setHashes(hashesArray);
           }
         });
       });
     }
-  }, [shards]);  // Dependency array triggers the effect when shards change
+  }, [shards]);
 
   const handleReconstructAPIKey = async () => {
-    // Send POST request to /request-shards with email
     try {
       const response = await fetch('http://54.206.14.84:4000/request-shards', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),
       });
 
-      const data = await response.json();
-
       if (response.ok) {
-        console.log('Shards reconstructed successfully:', data);
+        const data = await response.json();
         setSuccess('API Key reconstructed successfully');
-      } else {
-       //
       }
     } catch (error) {
       console.error('Error during API key reconstruction:', error);
-     //
     }
+  };
+
+  const handleTurnOffNode = (address: string,id:string) => {
+ 
+    socket.emit("removeNode",{node:id});
+    setTurnedOffNodes((prev) => new Set(prev).add(address));
   };
 
   return (
     <>
-      <h3>{connection_status}</h3>
+      <h3>Network Nodes</h3>
+      <div className="node-container">
+        {connectionStatus.map((client:any, index) => {
+          const address = client?._sender._socket._peername.address;
+          if (turnedOffNodes.has(address)) return null; // Skip rendering if node is turned off
+
+          return (
+            <div key={index} className="node-card">
+              <p>Address: {address}</p>
+              <button onClick={() => handleTurnOffNode(address, client?.id)}>
+                Turn Off
+              </button>
+            </div>
+          );
+        })}
+      </div>
+
       <BrowserRouter>
         <Routes>
           <Route path='/' element={<SignupForm />} />
@@ -117,7 +109,6 @@ function App() {
         </Routes>
       </BrowserRouter>
 
-      {/* Render all SHA-256 hashes */}
       <div>
         {hashes.length > 0 ? (
           <div>
@@ -131,8 +122,8 @@ function App() {
         ) : (
           <p>Waiting for shards data...</p>
         )}
-      
-        {hashes?.length > 1 && (
+
+        {hashes.length > 1 && (
           <>
             <button onClick={handleReconstructAPIKey}>Reconstruct API key using the shards</button>
             {success && <p>{success}</p>}
