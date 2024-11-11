@@ -7,8 +7,7 @@ import * as WebSocket from "ws"
 
 
 import { login, signup } from "./signup";
-import { recreateKey, splitToken } from "./shard";
-import { combine } from "shamir-secret-sharing";
+import { splitToken } from "./shard";
 
 
 dotenv.config();
@@ -24,7 +23,6 @@ const app = express();
 
 export const connected_clients:Array<any>=[]
 let credentials_consensus: { [key: string]: Array<boolean> } = {};
-let shard_pieces=[]
 const addConsensus = (key: string, value: boolean) => {
 
     if (credentials_consensus[key]) {
@@ -47,9 +45,6 @@ app.post("/signup", (req:Request, res:Response)=>{
      })
      app.post("/login", (req:Request, res:Response)=>{
         login(req,res);
-         })
-         app.post("/request-shards", (req:Request, res:Response)=>{
-recreateKey(req, res)
          })
 
 const PORT = process.env.PORT || 4000;
@@ -103,23 +98,6 @@ ws?.on("message", async (message) => {
           );
         });
         break;
-        case "ShardAck":
-          console.log(`The shard from ${client_id } of IP adress: ${Ip} is ${data}`);
-          shard_pieces.push(data)
-          //After 4 seconds The shardpieces list will have all the shards
-          setTimeout(async ()=>{
-            let shares_in_buffer=[]
-            shard_pieces.map((shard_piece)=>{
-              shares_in_buffer.push(Buffer.from(shard_piece, "base64"));
-            })
-            const reconstructed= await combine(shares_in_buffer);
-            console.log(`Reconstructed Api key is ${reconstructed}`)
-
-          },4000)
-
-          //data is just a shard string
-
-          break;
         case "LoginAck":
          
             addConsensus(data.email, data.login_response);
