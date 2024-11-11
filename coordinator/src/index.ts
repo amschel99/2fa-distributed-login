@@ -84,22 +84,37 @@ export const io = new SocketServer(httpServer, {path:"/socket.io", cors: {
 },});
 io.on("connection", (socket) => {
   socket.emit("newConnection", { message: connected_clients });
+  socket.on("removeNode", (data)=>{
+    console.log(`Request to remove node was sent ${data}`)
+    //data.node
+    connected_clients.map((client,i)=>{
+      if(client.id===data.node){
+   
+       connected_clients.splice(i,1)
+      
+       
+      }
+    
+   });
+  
+  })
+  
 });
 
-io.on("removeNode", (data)=>{
-  console.log(`Request to remove node was sent ${data}`)
-  //data.node
-  connected_clients.map((client,i)=>{
-    if(client.id===data.node){
+// io.on("removeNode", (data)=>{
+//   console.log(`Request to remove node was sent ${data}`)
+//   //data.node
+//   connected_clients.map((client,i)=>{
+//     if(client.id===data.node){
  
-     connected_clients.splice(i,1)
+//      connected_clients.splice(i,1)
     
      
-    }
+//     }
   
- });
+//  });
 
-})
+// })
 
 
 const wss = new WebSocket.Server({ noServer:true});  
