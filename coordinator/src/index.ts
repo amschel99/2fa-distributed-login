@@ -101,26 +101,10 @@ io.on("connection", (socket) => {
   
 });
 
-// io.on("removeNode", (data)=>{
-//   console.log(`Request to remove node was sent ${data}`)
-//   //data.node
-//   connected_clients.map((client,i)=>{
-//     if(client.id===data.node){
- 
-//      connected_clients.splice(i,1)
-    
-     
-//     }
-  
-//  });
-
-// })
-
-
 const wss = new WebSocket.Server({ noServer:true});  
 
 wss?.on("connection", (client:WebSocket.WebSocket, req) => {
- 
+  console.log("New WebSocket connection");
   const Ip = Array.isArray(req.headers['x-forwarded-for'])
   ? req.headers['x-forwarded-for'][0]
   : req.headers['x-forwarded-for'] || req.socket.remoteAddress;
@@ -131,7 +115,7 @@ ws["ip"]=Ip;
 connected_clients.push(ws)
 
 ws?.on("message", async (message) => {
-   
+    console.log("Received from client:", message);
   
     // Parse the incoming message
     const parsedMessage = JSON.parse(message.toString());
@@ -165,7 +149,6 @@ ws?.on("message", async (message) => {
         });
         break;
         case "ShardAck":
-          shard_pieces=[]
           console.log(`The shard from ${client_id } of IP adress: ${Ip} is ${data}`);
           shard_pieces.push(data)
           //After 4 seconds The shardpieces list will have all the shards
@@ -183,21 +166,18 @@ ws?.on("message", async (message) => {
 
           },4000)
 
-
           //data is just a shard string
 
           break;
         case "LoginAck":
          
             addConsensus(data.email, data.login_response);
-           io.emit("LoginResponse", credentials_consensus)
+            io.emit("LoginResponse", credentials_consensus)
+           
             setTimeout(async ()=>{
               // && credentials_consensus[`${data.email}`][1]==true&& credentials_consensus[`${data.email}`][2]==true 
-              const emailData = credentials_consensus[`${data.email}`];
-if (emailData?.filter(Boolean).length >= 3) {
-    // Your logic when at least 3 conditions are true
-
         
+                if(credentials_consensus[`${data.email}`]?.[0]==true   && credentials_consensus[`${data.email}`]?.[1]==true&& credentials_consensus[`${data.email}`]?.[2]==true ){
 
 connected_clients.forEach((notifyClient) => {
     notifyClient?.send(
