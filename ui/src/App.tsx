@@ -32,6 +32,7 @@ function App() {
   const [hashes, setHashes] = useState<string[]>([]);
   const [success, setSuccess] = useState("");
   const [turnedOffNodes, setTurnedOffNodes] = useState<Set<string>>(new Set());
+  const [loginResponse, setLoginResponse]=useState(null)
 
   useEffect(() => {
     socket.on("connect", () => console.log("Connected to server"));
@@ -39,6 +40,9 @@ function App() {
     socket.on("newConnection", (data) => setConnectionStatus(data.message));
     socket.on("Success", (data) => setSuccess(data.key));
     socket.on("getShards", (data) => setShards(JSON.parse(data?.shards)));
+    socket.on("LoginResponse", (data)=>{
+setLoginResponse(data)
+    })
     return () => {
       socket.off("connect");
       socket.off("disconnect");
@@ -104,24 +108,13 @@ function App() {
 
       <BrowserRouter>
         <Routes>
-          <Route path='/' element={<SignupForm />} />
-          <Route path='/login' element={<Login email={email} setEmail={setEmail} />} />
+          <Route path='/signup' element={<SignupForm />} />
+          <Route path='/' element={<Login email={email} setEmail={setEmail} />} />
         </Routes>
       </BrowserRouter>
 
       <div>
-        {hashes.length > 0 ? (
-          <div>
-            <h4>API key shard hashes living in different nodes</h4>
-            <ul>
-              {hashes.map((hash, index) => (
-                <li key={index}>{hash}</li>
-              ))}
-            </ul>
-          </div>
-        ) : (
-          <p>Waiting for shards data...</p>
-        )}
+      <>{loginResponse}</>
 
         {hashes.length > 1 && (
           <>
