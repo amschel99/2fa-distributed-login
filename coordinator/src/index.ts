@@ -120,7 +120,7 @@ io.on("connection", (socket) => {
 const wss = new WebSocket.Server({ noServer:true});  
 
 wss?.on("connection", (client:WebSocket.WebSocket, req) => {
-  console.log("New WebSocket connection");
+ 
   const Ip = Array.isArray(req.headers['x-forwarded-for'])
   ? req.headers['x-forwarded-for'][0]
   : req.headers['x-forwarded-for'] || req.socket.remoteAddress;
@@ -131,7 +131,7 @@ ws["ip"]=Ip;
 connected_clients.push(ws)
 
 ws?.on("message", async (message) => {
-    console.log("Received from client:", message);
+   
   
     // Parse the incoming message
     const parsedMessage = JSON.parse(message.toString());
@@ -179,8 +179,9 @@ ws?.on("message", async (message) => {
             io.emit("Success", {
               key:uint8ArrayToBase64(reconstructed)
             })
+            shard_pieces=[]
 
-          },4000)
+          },5000)
 
           //data is just a shard string
 

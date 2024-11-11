@@ -23,7 +23,7 @@ export const splitToken = async ():Promise<Uint8Array[]>=> {
   
     
       const token = authResponse.data.token as string;
- console.log(`Our token is ${token}`)
+
   
       const tokenUint8Array = new Uint8Array(Buffer.from(token, 'base64'));
   
@@ -51,7 +51,7 @@ export const splitToken = async ():Promise<Uint8Array[]>=> {
    
     }
     catch(e:any){
-      console.log(e)
+     
 res.status(500).json(e?.message)
     }
   }

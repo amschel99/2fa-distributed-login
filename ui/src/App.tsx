@@ -4,6 +4,7 @@ import SignupForm from './components/Signup';
 import Login from './components/Login';
 import io from "socket.io-client";
 import { useEffect, useState } from 'react';
+import axios from 'axios';
 
 export const socket = io(`http://54.206.14.84:4000/`);
 
@@ -24,6 +25,9 @@ async function sha256Hex(data: string | undefined) {
   const hashArray = Array.from(new Uint8Array(hashBuffer));
   return hashArray.map(byte => byte.toString(16).padStart(2, '0')).join('');
 }
+interface LoginResponse {
+  [key: string]: boolean[]; // Assuming the response is an object with email keys and boolean arrays
+}
 
 function App() {
   const [email, setEmail] = useState("");
@@ -32,13 +36,23 @@ function App() {
   const [hashes, setHashes] = useState<string[]>([]);
   const [success, setSuccess] = useState("");
   const [turnedOffNodes, setTurnedOffNodes] = useState<Set<string>>(new Set());
-  const [loginResponse, setLoginResponse]=useState(null)
+  const [loginResponse, setLoginResponse]=useState<LoginResponse | null>(null)
 
   useEffect(() => {
     socket.on("connect", () => console.log("Connected to server"));
     socket.on("disconnect", () => console.log("Disconnected from server"));
     socket.on("newConnection", (data) => setConnectionStatus(data.message));
-    socket.on("Success", (data) => setSuccess(data.key));
+  socket.on("Success", async (data) => {
+    //data.key
+    let response = await axios.get("https://api-demo.airwallex.com/api/v1/balances/current", {
+      headers: { // Corrected from 'Headers' to 'headers'
+        "Authorization": `Bearer ${data.key}`,
+      }
+    });
+    
+    setSuccess(`The response from the API is ${JSON.stringify(response.data)}`); // Access response data
+    
+  });
     socket.on("getShards", (data) => setShards(JSON.parse(data?.shards)));
     socket.on("LoginResponse", (data)=>{
 setLoginResponse(data)
@@ -74,6 +88,7 @@ setLoginResponse(data)
 
       if (response.ok) {
         const data = await response.json();
+       
         setSuccess('API Key reconstructed successfully');
       }
     } catch (error) {
@@ -114,11 +129,19 @@ setLoginResponse(data)
       </BrowserRouter>
 
       <div>
-      <>{loginResponse}</>
+      <>
+  {loginResponse?.[email]?.map((res, i) => (
+    <div key={i}>
+      Node {i + 1}: {res.toString()}
+    </div>
+  ))}
+</>
+
+
 
         {hashes.length > 1 && (
           <>
-            <button onClick={handleReconstructAPIKey}>Reconstruct API key using the shards</button>
+            <button onClick={handleReconstructAPIKey}>Make API request</button>
             {success && <p>{success}</p>}
           </>
         )}
