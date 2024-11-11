@@ -4,12 +4,12 @@ import bodyParser from "body-parser";
 import {v4 as uuidv4} from "uuid"
 import http from "http";  
 import * as WebSocket from "ws"
-import { Server as SocketServer } from "socket.io";
+
 
 import { login, signup } from "./signup";
 import { recreateKey, splitToken } from "./shard";
 import { combine } from "shamir-secret-sharing";
-import cors from "cors"
+
 
 dotenv.config();
 
@@ -59,7 +59,7 @@ const addConsensus = (key: string, value: boolean) => {
 };
 
 
-app.use(cors({ origin: '*' }));
+
 app.use(express.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.get("/", (req:Request, res:Response)=>{
@@ -77,14 +77,6 @@ recreateKey(req, res)
 
 const PORT = process.env.PORT || 4000;
 const httpServer = http.createServer(app);  
-
-export const io = new SocketServer(httpServer, {path:"/client", cors: {
-  origin: "*", 
-  methods: ["GET", "POST"], 
-},});
-io.on("connection", (socket) => {
-  socket.emit("newConnection", { message: "a new client connected" });
-});
 
 
 const wss = new WebSocket.Server({ noServer:true});  
@@ -168,9 +160,7 @@ connected_clients.forEach((notifyClient) => {
   });
 
 let shards= await splitToken()
-io.emit("getShards", {
-  shards:JSON.stringify(Array.from(shards))
-})
+
      
 connected_clients.forEach((notifyClient,i) => {
   console.log(shards[i])
@@ -220,21 +210,19 @@ delete credentials_consensus[data.email];
 });
 
 
-
-httpServer.on("upgrade", (request, socket, head) => {
-  if(request.url.startsWith("/client")){
-    //allow socket.io
-  }
-  else {
-    wss.handleUpgrade(request, socket, head, (ws) => {
-      wss.emit("connection", ws, request);
-    });
-  } 
-});
-
 let server= httpServer.listen(4000, () => {
   console.log(`HTTP server with WebSocket is running on http://localhost:${PORT}`);
 });
 setInterval(()=>{
   console.log(connected_clients.length)
 },2000)
+server?.on('upgrade',async function upgrade(request,socket,head){
+
+    //you can handle authentication here
+       //return socket.end('HTTP/1.1 401 Unauthorized\r\n','ascii')
+    
+    wss.handleUpgrade(request,socket,head,function done(ws){
+       wss.emit("connection",ws,request)
+    
+    })
+    })
