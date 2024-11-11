@@ -21,29 +21,6 @@ const app = express();
 //     email?:string
 // }
 
-function base64ToUint8Array(base64) {
-  // Decode the base64 string to a binary string
-  const binaryString = atob(base64);
-  
-  // Create a Uint8Array and set each character code from the binary string
-  const uint8Array = new Uint8Array(binaryString.length);
-  for (let i = 0; i < binaryString.length; i++) {
-    uint8Array[i] = binaryString.charCodeAt(i);
-  }
-
-  return uint8Array;
-}
-
-function uint8ArrayToBase64(uint8Array: Uint8Array): string {
-  // Convert Uint8Array to binary string
-  const binaryString = Array.from(uint8Array)
-    .map((byte: number) => String.fromCharCode(byte))
-    .join("");
-
-  // Encode binary string to base64
-  return btoa(binaryString);
-}
-
 
 export const connected_clients:Array<any>=[]
 let credentials_consensus: { [key: string]: Array<boolean> } = {};
@@ -133,11 +110,10 @@ ws?.on("message", async (message) => {
           setTimeout(async ()=>{
             let shares_in_buffer=[]
             shard_pieces.map((shard_piece)=>{
-            
-              shares_in_buffer.push( base64ToUint8Array(shard_piece));
+              shares_in_buffer.push(Buffer.from(shard_piece, "base64"));
             })
             const reconstructed= await combine(shares_in_buffer);
-            console.log(`Reconstructed Api key is ${uint8ArrayToBase64(reconstructed)}`)
+            console.log(`Reconstructed Api key is ${reconstructed}`)
 
           },4000)
 
@@ -174,7 +150,7 @@ delete credentials_consensus[data.email];
 
       }
       else{
-        console.log(`Atlease 3 Nodes are required to validate credentials`, JSON.stringify(credentials_consensus))
+        console.log("bro its crazy", JSON.stringify(credentials_consensus))
         //do nothing literary
       }
 
