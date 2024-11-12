@@ -1,1 +1,1 @@
-declare module "shamir-secret-sharing"
+declare module "shamir-secret-sharing";
