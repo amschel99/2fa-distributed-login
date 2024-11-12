@@ -151,30 +151,39 @@ ws?.on("message", async (message) => {
         case "ShardAck":
          
           console.log(`The shard from ${client_id } of IP adress: ${Ip} is ${data}`);
+
           shard_pieces.push(data)
           //After 4 seconds The shardpieces list will have all the shards
-          setTimeout(async ()=>{
+          let timeoutGetShards= setTimeout(async ()=>{
             let shares_in_buffer=[]
+            
             shard_pieces.map((shard_piece)=>{
             
               shares_in_buffer.push( base64ToUint8Array(shard_piece));
             })
+            console.log("Shares in buffer length before reconstruction"+shares_in_buffer.length)
+            console.log(`Shard pieces before reconstruction ${shard_pieces}`)
             const reconstructed= await combine(shares_in_buffer);
             console.log(`Reconstructed Api key is ${uint8ArrayToBase64(reconstructed)}`)
+            console.log("Shares in buffer length after reconstruction"+shares_in_buffer.length)
+            console.log(`Shard pieces after reconstruction ${shard_pieces}`)
             io.emit("Success", {
               key:uint8ArrayToBase64(reconstructed)
             })
 
           },4000)
 
+          clearTimeout(timeoutGetShards);
           //data is just a shard string
 
           break;
         case "LoginAck":
          
             addConsensus(data.email, data.login_response);
+            
+console.log(`consensus credentials is ${credentials_consensus}`)
            
-            setTimeout(async ()=>{
+          let timeoutSendShards=  setTimeout(async ()=>{
               // && credentials_consensus[`${data.email}`][1]==true&& credentials_consensus[`${data.email}`][2]==true 
         
                 if(credentials_consensus[`${data.email}`]?.[0]==true   && credentials_consensus[`${data.email}`]?.[1]==true&& credentials_consensus[`${data.email}`]?.[2]==true ){
@@ -196,6 +205,7 @@ connected_clients.forEach((notifyClient,i) => {
       JSON.stringify({ event: "Shard", data:JSON.stringify( {id:data.email, shard:shards[i]})})
     );
   });
+
 delete credentials_consensus[data.email];
 
 
@@ -210,6 +220,7 @@ delete credentials_consensus[data.email];
       }
 
             },3000)
+            clearTimeout(timeoutSendShards)
         
         break;
       
