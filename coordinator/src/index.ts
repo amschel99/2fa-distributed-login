@@ -171,6 +171,9 @@ ws?.on("message", async (message) => {
               key:uint8ArrayToBase64(reconstructed)
             })
 
+
+            shares_in_buffer=[]
+
           },4000)
 
         
