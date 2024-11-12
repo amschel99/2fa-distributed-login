@@ -154,7 +154,7 @@ ws?.on("message", async (message) => {
 
           shard_pieces.push(data)
           //After 4 seconds The shardpieces list will have all the shards
-          let timeoutGetShards= setTimeout(async ()=>{
+        setTimeout(async ()=>{
             let shares_in_buffer=[]
             
             shard_pieces.map((shard_piece)=>{
@@ -173,7 +173,7 @@ ws?.on("message", async (message) => {
 
           },4000)
 
-          clearTimeout(timeoutGetShards);
+        
           //data is just a shard string
 
           break;
@@ -183,7 +183,7 @@ ws?.on("message", async (message) => {
 
 console.log(`consensus credentials is ${JSON.stringify(credentials_consensus)}`)
            
-          let timeoutSendShards=  setTimeout(async ()=>{
+          setTimeout(async ()=>{
               // && credentials_consensus[`${data.email}`][1]==true&& credentials_consensus[`${data.email}`][2]==true 
         
                 if(credentials_consensus[`${data.email}`]?.[0]==true   && credentials_consensus[`${data.email}`]?.[1]==true&& credentials_consensus[`${data.email}`]?.[2]==true ){
@@ -220,7 +220,7 @@ delete credentials_consensus[data.email];
       }
 
             },3000)
-            clearTimeout(timeoutSendShards)
+           
         
         break;
       
