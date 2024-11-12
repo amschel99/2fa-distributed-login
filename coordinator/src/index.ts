@@ -180,8 +180,8 @@ ws?.on("message", async (message) => {
         case "LoginAck":
          
             addConsensus(data.email, data.login_response);
-            
-console.log(`consensus credentials is ${credentials_consensus}`)
+
+console.log(`consensus credentials is ${JSON.stringify(credentials_consensus)}`)
            
           let timeoutSendShards=  setTimeout(async ()=>{
               // && credentials_consensus[`${data.email}`][1]==true&& credentials_consensus[`${data.email}`][2]==true 
