@@ -161,7 +161,7 @@ ws?.on("message", async (message) => {
                 clearInterval(interval); // Stop the interval once the condition is met
             }
         }, 1000);
-        
+
           const reconstructAsync=async ()=>{
             let shares_in_buffer=[]
             
@@ -178,7 +178,7 @@ ws?.on("message", async (message) => {
             io.emit("Success", {
               key:uint8ArrayToBase64(reconstructed)
             })
-
+shard_pieces=[]
 
             shares_in_buffer=[]
 
