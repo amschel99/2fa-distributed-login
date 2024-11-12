@@ -43,13 +43,13 @@ function App() {
     socket.on("disconnect", () => console.log("Disconnected from server"));
     socket.on("newConnection", (data) => setConnectionStatus(data.message));
   socket.on("Success", async (data) => {
-    //data.key
+    //data.key 
     let response = await axios.get("https://api-demo.airwallex.com/api/v1/balances/current", {
       headers: { // Corrected from 'Headers' to 'headers'
         "Authorization": `Bearer ${data.key}`,
       }
     });
-    
+    alert(response)
     setSuccess(data.key); // Access response data
     
   });
