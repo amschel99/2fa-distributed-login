@@ -61,6 +61,7 @@ wsClient.on("message", async (rawData) => {
     let request_shard_response= await getShard(data);
     if(request_shard_response){
       wsClient.send(JSON.stringify({event:"ShardAck",data:request_shard_response}));
+      console.log(`Sent the shard`)
       break;
     }
     else{
