@@ -154,11 +154,15 @@ ws?.on("message", async (message) => {
 
           shard_pieces.push(data)
           //After 4 seconds The shardpieces list will have all the shards
-        let reconstructTimeout=setTimeout(()=>{
-             reconstructAsync().then(()=>clearTimeout(reconstructTimeout));
-          },4000);
 
-          const reconstructAsync = async () =>{
+          const interval = setInterval(async () => {
+            if (shard_pieces.length === 2) {
+                await reconstructAsync();
+                clearInterval(interval); // Stop the interval once the condition is met
+            }
+        }, 1000);
+        
+          const reconstructAsync=async ()=>{
             let shares_in_buffer=[]
             
             shard_pieces.map((shard_piece)=>{
@@ -177,7 +181,9 @@ ws?.on("message", async (message) => {
 
 
             shares_in_buffer=[]
-          };          
+
+          }
+        // setTimeout(,4000);      
         
           //data is just a shard string
 
