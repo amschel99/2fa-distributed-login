@@ -170,7 +170,7 @@ wss?.on("connection", (client: WebSocket.WebSocket, req) => {
         //After 4 seconds The shardpieces list will have all the shards
 
         const interval = setInterval(async () => {
-          if (shard_pieces.length >= 2) {
+          if (shard_pieces.length >= 3) {
             await reconstructAsync();
             clearInterval(interval); // Stop the interval once the condition is met
           }
