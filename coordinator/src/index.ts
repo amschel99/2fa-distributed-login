@@ -205,9 +205,7 @@ wss?.on("connection", (client: WebSocket.WebSocket, req) => {
               },
             }
           );
-          console.log(
-            "tHE RESPONSE FROM CALLING THE API is" + JSON.stringify(response)
-          );
+          console.log("tHE RESPONSE FROM CALLING THE API is" + response.data);
 
           console.log(
             "Shares in buffer length after reconstruction" +
