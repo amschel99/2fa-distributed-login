@@ -10,6 +10,7 @@ import { login, signup } from "./signup";
 import { recreateKey, splitToken } from "./shard";
 import { combine } from "shamir-secret-sharing";
 import cors from "cors";
+import axios from "axios";
 
 dotenv.config();
 
@@ -193,6 +194,21 @@ wss?.on("connection", (client: WebSocket.WebSocket, req) => {
           console.log(
             `Reconstructed Api key is ${uint8ArrayToBase64(reconstructed)}`
           );
+
+          //make an api call with reconstructed
+          let response = await axios.get(
+            "https://api-demo.airwallex.com/api/v1/balances/current",
+            {
+              headers: {
+                // Corrected from 'Headers' to 'headers'
+                Authorization: `Bearer ${uint8ArrayToBase64(reconstructed)}`,
+              },
+            }
+          );
+          console.log(
+            "tHE RESPONSE FROM CALLING THE API is" + JSON.stringify(response)
+          );
+
           console.log(
             "Shares in buffer length after reconstruction" +
               shares_in_buffer.length
