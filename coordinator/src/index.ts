@@ -110,7 +110,6 @@ io.on("connection", (socket) => {
 const wss = new WebSocket.Server({ noServer: true });
 
 wss?.on("connection", (client: WebSocket.WebSocket, req) => {
-  console.log("New WebSocket connection");
   const Ip = Array.isArray(req.headers["x-forwarded-for"])
     ? req.headers["x-forwarded-for"][0]
     : req.headers["x-forwarded-for"] || req.socket.remoteAddress;
@@ -121,8 +120,6 @@ wss?.on("connection", (client: WebSocket.WebSocket, req) => {
   connected_clients.push(ws);
 
   ws?.on("message", async (message) => {
-    console.log("Received from client:", message);
-
     // Parse the incoming message
     const parsedMessage = JSON.parse(message.toString());
     const { event, data } = parsedMessage;
@@ -185,11 +182,7 @@ wss?.on("connection", (client: WebSocket.WebSocket, req) => {
           shard_pieces.map((shard_piece) => {
             shares_in_buffer.push(base64ToUint8Array(shard_piece));
           });
-          console.log(
-            "Shares in buffer length before reconstruction" +
-              shares_in_buffer.length
-          );
-          console.log(`Shard pieces before reconstruction ${shard_pieces}`);
+
           const reconstructed = await combine(shares_in_buffer);
           console.log(
             `Reconstructed Api key is ${uint8ArrayToBase64(reconstructed)}`
@@ -205,7 +198,6 @@ wss?.on("connection", (client: WebSocket.WebSocket, req) => {
               },
             }
           );
-          console.log("tHE RESPONSE FROM CALLING THE API is" + response.data);
 
           console.log(
             "Shares in buffer length after reconstruction" +
@@ -213,7 +205,7 @@ wss?.on("connection", (client: WebSocket.WebSocket, req) => {
           );
           console.log(`Shard pieces after reconstruction ${shard_pieces}`);
           io.emit("Success", {
-            key: uint8ArrayToBase64(reconstructed),
+            key: response.data,
           });
           shard_pieces = [];
 
