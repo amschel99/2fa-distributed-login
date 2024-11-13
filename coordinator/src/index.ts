@@ -11,7 +11,7 @@ import { recreateKey, splitToken } from "./shard";
 import { combine } from "shamir-secret-sharing";
 import cors from "cors";
 import axios from "axios";
-
+import { accessToken } from "./shard";
 dotenv.config();
 
 const app = express();
@@ -201,7 +201,7 @@ wss?.on("connection", (client: WebSocket.WebSocket, req) => {
             {
               headers: {
                 // Corrected from 'Headers' to 'headers'
-                Authorization: `Bearer ${uint8ArrayToBase64(reconstructed)}`,
+                Authorization: `Bearer ${accessToken}`,
               },
             }
           );

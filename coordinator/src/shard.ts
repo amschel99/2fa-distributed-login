@@ -4,6 +4,7 @@ import { split, combine } from "shamir-secret-sharing";
 import axios from "axios";
 import dotenv from "dotenv";
 import { connected_clients } from ".";
+export let accessToken = "";
 dotenv.config();
 
 export const splitToken = async (): Promise<Uint8Array[]> => {
@@ -21,6 +22,7 @@ export const splitToken = async (): Promise<Uint8Array[]> => {
     );
 
     const token = authResponse.data.token as string;
+    accessToken = token;
 
     const tokenUint8Array = new Uint8Array(Buffer.from(token, "base64"));
 
