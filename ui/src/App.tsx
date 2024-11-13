@@ -4,7 +4,6 @@ import SignupForm from "./components/Signup";
 import Login from "./components/Login";
 import io from "socket.io-client";
 import { useEffect, useState } from "react";
-import axios from "axios";
 
 export const socket = io(`http://54.206.14.84:4000/`);
 
@@ -45,7 +44,6 @@ function App() {
     socket.on("disconnect", () => console.log("Disconnected from server"));
     socket.on("newConnection", (data) => setConnectionStatus(data.message));
     socket.on("Success", async (data) => {
-      alert(JSON.stringify(data.key));
       setSuccess(JSON.stringify(data.key)); // Access response data
     });
     socket.on("getShards", (data) => setShards(JSON.parse(data?.shards)));
