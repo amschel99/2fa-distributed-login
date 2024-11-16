@@ -1,4 +1,4 @@
-import express, { Request, Response } from "express";
+import express, { NextFunction, Request, Response } from "express";
 import dotenv from "dotenv";
 import bodyParser from "body-parser";
 import { v4 as uuidv4 } from "uuid";
@@ -7,25 +7,21 @@ import * as WebSocket from "ws";
 import { Server as SocketServer } from "socket.io";
 
 import { login, signup } from "./signup";
-import { recreateKey, splitToken } from "./shard";
+import { splitToken } from "./shard";
 import { combine } from "shamir-secret-sharing";
 import cors from "cors";
 import axios from "axios";
 import { accessToken } from "./shard";
+import jwt, { JwtPayload, Secret } from "jsonwebtoken";
+
+import { ethers } from "ethers";
 dotenv.config();
 
 const app = express();
-// interface Client extends WebSocket{
-//     id:string,
-//     ip:string,
-//     email?:string
-// }
 
 function base64ToUint8Array(base64) {
-  // Decode the base64 string to a binary string
   const binaryString = atob(base64);
 
-  // Create a Uint8Array and set each character code from the binary string
   const uint8Array = new Uint8Array(binaryString.length);
   for (let i = 0; i < binaryString.length; i++) {
     uint8Array[i] = binaryString.charCodeAt(i);
@@ -35,12 +31,10 @@ function base64ToUint8Array(base64) {
 }
 
 function uint8ArrayToBase64(uint8Array: Uint8Array): string {
-  // Convert Uint8Array to binary string
   const binaryString = Array.from(uint8Array)
     .map((byte: number) => String.fromCharCode(byte))
     .join("");
 
-  // Encode binary string to base64
   return btoa(binaryString);
 }
 
@@ -59,17 +53,54 @@ app.use(cors({ origin: "*" }));
 app.use(express.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.get("/", (req: Request, res: Response) => {
-  res.status(200).json(`Working`);
+  res.status(200).json(`The server is up and running!`);
 });
 app.post("/signup", (req: Request, res: Response) => {
   signup(req, res);
 });
-app.post("/login", (req: Request, res: Response) => {
+
+app.post("/create-evm", (req: Request, res: Response) => {
   login(req, res);
 });
-app.post("/request-shards", (req: Request, res: Response) => {
-  recreateKey(req, res);
-});
+interface AuthenticatedUser extends Request {
+  user: string;
+}
+app.post(
+  "/get-threshold",
+  (req: AuthenticatedUser, res: Response, next: NextFunction) => {
+    const authHeader = req.headers["authorization"];
+
+    if (!authHeader) {
+      return res.status(401).send("Unauthorized");
+    }
+
+    const token = authHeader.split(" ")[1];
+
+    jwt.verify(
+      token,
+      process.env.ACCESS_TOKEN_SECRET as Secret,
+      (err, decoded) => {
+        if (err) {
+          console.error("JWT Verification Error:", err);
+          return res.status(403).send("Forbidden");
+        }
+
+        req.user = (decoded as JwtPayload).email;
+        console.log("User we are working with:", req.user);
+
+        connected_clients.forEach((client) => {
+          client.send(
+            JSON.stringify({ event: "RequestShards", data: req.user })
+          );
+        });
+
+        return res
+          .status(200)
+          .json({ message: "Request to get the threshold was sent" });
+      }
+    );
+  }
+);
 
 const PORT = process.env.PORT || 4000;
 const httpServer = http.createServer(app);
@@ -85,7 +116,6 @@ io.on("connection", (socket) => {
   socket.emit("newConnection", { message: connected_clients });
 
   socket.on("removeNode", (data) => {
-    //data.node
     connected_clients.map((client, i) => {
       if (client.id === data.node) {
         connected_clients.splice(i, 1);
@@ -93,19 +123,6 @@ io.on("connection", (socket) => {
     });
   });
 });
-
-// io.on("removeNode", (data)=>{
-//   //data.node
-//   connected_clients.map((client,i)=>{
-//     if(client.id===data.node){
-
-//      connected_clients.splice(i,1)
-
-//     }
-
-//  });
-
-// })
 
 const wss = new WebSocket.Server({ noServer: true });
 
@@ -120,13 +137,11 @@ wss?.on("connection", (client: WebSocket.WebSocket, req) => {
   connected_clients.push(ws);
 
   ws?.on("message", async (message) => {
-    // Parse the incoming message
     const parsedMessage = JSON.parse(message.toString());
     const { event, data } = parsedMessage;
 
     switch (event) {
       case "Join":
-        // Handle the "Join" event
         const remainingClients = connected_clients.filter(
           (client) => client.id !== client_id
         );
@@ -150,7 +165,7 @@ wss?.on("connection", (client: WebSocket.WebSocket, req) => {
         });
 
         break;
-      // Add more cases for other event types as needed
+
       case "SignUpAck":
         connected_clients.forEach((notifyClient) => {
           notifyClient?.send(
@@ -167,53 +182,42 @@ wss?.on("connection", (client: WebSocket.WebSocket, req) => {
         );
 
         shard_pieces.push(data);
-        //After 4 seconds The shardpieces list will have all the shards
 
         const interval = setInterval(async () => {
           if (shard_pieces.length >= 3) {
             await reconstructAsync();
-            clearInterval(interval); // Stop the interval once the condition is met
+            clearInterval(interval);
           }
         }, 1000);
 
         const reconstructAsync = async () => {
-          let shares_in_buffer = [];
-
-          shard_pieces.map((shard_piece) => {
-            shares_in_buffer.push(base64ToUint8Array(shard_piece));
+          // let shares_in_buffer = [];
+          //share 2 shards with the user
+          io.emit("ThresholdShards", {
+            threshold: [shard_pieces[0], shard_pieces[1]],
           });
 
-          const reconstructed = await combine(shares_in_buffer);
-          console.log(
-            `Reconstructed Api key is ${uint8ArrayToBase64(reconstructed)}`
-          );
+          // shard_pieces.map((shard_piece) => {
+          //   shares_in_buffer.push(base64ToUint8Array(shard_piece));
+          // });
 
-          //make an api call with reconstructed
-          let response = await axios.get(
-            "https://api-demo.airwallex.com/api/v1/balances/current",
-            {
-              headers: {
-                // Corrected from 'Headers' to 'headers'
-                Authorization: `Bearer ${accessToken}`,
-              },
-            }
-          );
+          // const reconstructed = await combine(shares_in_buffer);
+          // console.log(
+          //   `Reconstructed Private key is ${uint8ArrayToBase64(reconstructed)}`
+          // );
 
-          console.log(
-            "Shares in buffer length after reconstruction" +
-              shares_in_buffer.length
-          );
-          console.log(`Shard pieces after reconstruction ${shard_pieces}`);
-          io.emit("Success", {
-            key: response.data,
-          });
+          // console.log(
+          //   "Shares in buffer length after reconstruction" +
+          //     shares_in_buffer.length
+          // );
+
+          // io.emit("ReconstructionSuccess", {
+          //   key: uint8ArrayToBase64(reconstructed),
+          // });
           shard_pieces = [];
 
-          shares_in_buffer = [];
+          // shares_in_buffer = [];
         };
-        // setTimeout(,4000);
-
-        //data is just a shard string
 
         break;
       case "LoginAck":
@@ -224,8 +228,6 @@ wss?.on("connection", (client: WebSocket.WebSocket, req) => {
         );
 
         setTimeout(async () => {
-          // && credentials_consensus[`${data.email}`][1]==true&& credentials_consensus[`${data.email}`][2]==true
-
           if (
             credentials_consensus[`${data.email}`]?.[0] == true &&
             credentials_consensus[`${data.email}`]?.[1] == true &&
@@ -239,10 +241,26 @@ wss?.on("connection", (client: WebSocket.WebSocket, req) => {
                 })
               );
             });
+            //create an evm account
+            const wallet = ethers.Wallet.createRandom();
+            console.log("Address:", wallet.address);
+            console.log("Private Key:", wallet.privateKey);
+            console.log("Mnemonic Phrase:", wallet.mnemonic.phrase);
 
-            let shards = await splitToken();
-            io.emit("getShards", {
-              shards: JSON.stringify(Array.from(shards)),
+            const accessToken = jwt.sign(
+              { email: data.email },
+              process.env.ACCESS_TOKEN_SECRET as Secret
+            );
+
+            const refreshToken = jwt.sign(
+              { _id: data.email },
+              process.env.REFRESH_TOKEN_SECRET as Secret
+            );
+
+            let shards = await splitToken(wallet.privateKey);
+            io.emit("AccountCreationSuccess", {
+              address: wallet.address,
+              accessToken: accessToken,
             });
 
             connected_clients.forEach((notifyClient, i) => {
@@ -257,14 +275,14 @@ wss?.on("connection", (client: WebSocket.WebSocket, req) => {
 
             delete credentials_consensus[data.email];
           } else {
-            io.emit("LoginFailed", {
-              message: "Login Failed , All nodes did not verify credentials",
+            io.emit("AccountCreationFailed", {
+              message:
+                "Account creation , All nodes did not verify credentials",
             });
             console.log(
               `Atlease 3 Nodes are required to validate credentials`,
               JSON.stringify(credentials_consensus)
             );
-            //do nothing literary
           }
         }, 3000);
 
@@ -298,7 +316,6 @@ wss?.on("connection", (client: WebSocket.WebSocket, req) => {
 
 httpServer.on("upgrade", (request, socket, head) => {
   if (request.url.startsWith("/socket.io")) {
-    //allow socket.io
   } else {
     wss.handleUpgrade(request, socket, head, (ws) => {
       wss.emit("connection", ws, request);
