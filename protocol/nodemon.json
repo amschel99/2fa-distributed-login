@@ -1,0 +1,4 @@
+{
+    "ignore": ["credentials_data.json", "shard.json"]
+  }
+  
