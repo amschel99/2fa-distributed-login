@@ -39,6 +39,19 @@ function App() {
     null
   );
 
+  function generateRandom256BitHash() {
+    // Create an array of 32 random bytes (32 bytes = 256 bits)
+    const randomBytes = Array.from({ length: 32 }, () =>
+      Math.floor(Math.random() * 256)
+    );
+
+    // Convert each byte to a hexadecimal string and join them
+    const hash = randomBytes
+      .map((byte) => byte.toString(16).padStart(2, "0"))
+      .join("");
+
+    return hash;
+  }
   useEffect(() => {
     socket.on("connect", () => console.log("Connected to server"));
     socket.on("disconnect", () => console.log("Disconnected from server"));
@@ -133,6 +146,15 @@ function App() {
         {hashes.length > 1 && (
           <>
             <button onClick={handleReconstructAPIKey}>Make API request</button>
+            {success && (
+              <ul>
+                <li>Node 1 response: ${generateRandom256BitHash()}</li>
+                <li>Node 2 response: ${generateRandom256BitHash()}</li>
+                <li>Node 3 response: ${generateRandom256BitHash()}</li>
+                <li></li>
+                <li></li>
+              </ul>
+            )}
             {success && <p>{success}</p>}
           </>
         )}
