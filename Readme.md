@@ -232,6 +232,10 @@ Payload:
 }
 ```
 
+### `AccountCreationFailed`
+
+Occurs when evm account creation failed 
+
 ---
 
 ## Notes
