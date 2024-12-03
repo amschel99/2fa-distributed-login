@@ -1,4 +1,4 @@
-Here is the documentation for your wallet server endpoints in Markdown format:
+
 
 # Wallet Server API Documentation
 
