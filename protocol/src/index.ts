@@ -17,7 +17,7 @@ const app = express();
 app.use(express.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-const wsClient = new WebSocket("ws://54.206.14.84:4000");
+const wsClient = new WebSocket("ws://13.211.126.124:4000");
 
 wsClient.on("open", () => {
   console.log("WebSocket client connected to the server");
