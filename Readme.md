@@ -1,52 +1,240 @@
-### Architecture
+Here is the documentation for your wallet server endpoints in Markdown format:
 
-This software is designed to run across multiple machines, enabling them to perform specific tasks in a distributed system. The core functionalities of the software are outlined below:
+# Wallet Server API Documentation
 
-#### Core Features
+## Base URL
+All endpoints are relative to the base URL: `http://yourserver.com/api`
 
-1. **Store User Credentials**  
-   Each machine will securely store user credentials for authentication purposes.
+---
 
-2. **Validate Credentials**  
-   The software will validate user credentials to ensure that only authorized users can access the system.
+## Endpoints
 
-3. **Generate Token/Private Key**  
-   After validation, a unique token or private key is generated for the user to ensure secure communication within the system.
+### 1. **Signup**
 
-4. **Shamir Secret Sharing for Key Splitting**  
-   The private key is split into 4 shards using the **Shamir Secret Sharing Algorithm**.  
-   **Note**: It needs to be decided whether the key splitting process should be performed by the individual nodes or by a dedicated machine responsible for this task.
+#### Method: `POST`
+#### Endpoint: `/signup`
 
-5. **Shard Storage**  
-   Each machine will securely store a shard of the private key, ensuring redundancy and security.
+#### Description:
+Creates a new user account.
 
-6. **Shard Distribution**  
-   The software will send a shard to another machine to ensure that all shards are distributed across the system for fault tolerance and security.
+#### Request:
+- **Body:**
+  ```json
+  {
+    "email": "user@example.com",
+    "password": "securepassword"
+  }
+  ```
 
-#### Considerations
+#### Response:
+- **200 OK:** User created successfully.
+- **500 Internal Server Error:** An error occurred on the server.
 
-- **Key Splitting Location**: The decision on whether to handle key splitting at the node level or through a dedicated machine should be made based on performance, security, and fault tolerance requirements.
-- **Fault Tolerance & Redundancy**: Storing and distributing shards across multiple machines will ensure data availability even if one machine fails.
+---
 
-This architecture aims to provide a distributed and secure method of storing and managing user credentials, private keys, and secret shards across different machines.
+### 2. **Create EVM Wallet**
 
+#### Method: `POST`
+#### Endpoint: `/create-evm`
 
-##### P.S
-This library is used for shamir secret sharing, https://github.com/privy-io/shamir-secret-sharing
-### Running coordinator using docker
-```bash
-sudo docker-compose -f docker-compose.yml  build api
+#### Description:
+Creates an Ethereum wallet for the user.
+
+#### Request:
+- **Body:**
+  ```json
+  {
+    "email": "user@example.com",
+    "password": "securepassword"
+  }
+  ```
+
+#### Response:
+- **200 OK:** Wallet created successfully. The frontend should listen for the `AccountCreationSuccess` event with the payload:
+  ```json
+  {
+    "address": "0xYourWalletAddress",
+    "accessToken": "YourAccessToken"
+  }
+  ```
+- **400 Bad Request:** Invalid request data.
+- **500 Internal Server Error:** An error occurred on the server.
+
+---
+
+### 3. **Balance**
+
+#### Method: `GET`
+#### Endpoint: `/balance`
+
+#### Description:
+Retrieves the balance of the user's Ethereum wallet.
+
+#### Request:
+- **Headers:**
+  ```
+  Authorization: Bearer <accessToken>
+  ```
+
+#### Response:
+- **200 OK:** Balance retrieved successfully.
+  ```json
+  {
+    "message": "Balance retrieved successfully",
+    "balance": "0.123456789" // Balance in ETH
+  }
+  ```
+- **401 Unauthorized:** Invalid or missing access token.
+- **500 Internal Server Error:** An error occurred on the server.
+
+---
+
+### 4. **Spend**
+
+#### Method: `POST`
+#### Endpoint: `/spend`
+
+#### Description:
+Sends ETH to a specified address.
+
+#### Request:
+- **Headers:**
+  ```
+  Authorization: Bearer <accessToken>
+  ```
+- **Body:**
+  ```json
+  {
+    "to": "0xReceiverAddress",
+    "value": "0.01" // Amount in ETH as string
+  }
+  ```
+
+#### Response:
+- **200 OK:** Transaction sent successfully. The frontend should listen for the following events:
+  - **TXSent:**  
+    ```json
+    {
+      "message": "Transaction details as JSON"
+    }
+    ```
+  - **TXConfirmed:**  
+    ```json
+    {
+      "message": "Transaction receipt as JSON"
+    }
+    ```
+- **401 Unauthorized:** Invalid or missing access token.
+
+---
+
+### 5. **Authorize Spend**
+
+#### Method: `POST`
+#### Endpoint: `/authorize-spend`
+
+#### Description:
+Authorizes another user to spend on the wallet.
+
+#### Request:
+- **Headers:**
+  ```
+  Authorization: Bearer <accessToken>
+  ```
+- **Body:**
+  ```json
+  {
+    "time": "4s", // Duration for the authorization
+    "receiver": "receiver@example.com" // Receiver's email
+  }
+  ```
+
+#### Response:
+- **200 OK:** Authorization successful.
+  ```json
+  {
+    "message": "Authorization successful",
+    "token": "NewAuthorizationToken"
+  }
+  ```
+- **400 Bad Request:** Invalid request data.
+- **401 Unauthorized:** Invalid or missing access token.
+- **403 Forbidden:** Action not allowed.
+- **500 Internal Server Error:** An error occurred on the server.
+
+---
+
+### 6. **Foreign Spend**
+
+#### Method: `POST`
+#### Endpoint: `/foreign-spend`
+
+#### Description:
+Executes a transaction using a spend token.
+
+#### Request:
+- **Headers:**
+  ```
+  Authorization: Bearer <accessToken>
+  ```
+- **Body:**
+  ```json
+  {
+    "spendToken": "YourSpendToken"
+  }
+  ```
+
+#### Response:
+- **200 OK:** Transaction sent successfully. The frontend should listen for the following events:
+  - **TXSent:**  
+    ```json
+    {
+      "message": "Transaction details as JSON"
+    }
+    ```
+  - **TXConfirmed:**  
+    ```json
+    {
+      "message": "Transaction receipt as JSON"
+    }
+    ```
+- **400 Bad Request:** Invalid request data.
+- **401 Unauthorized:** Invalid or missing access token.
+- **403 Forbidden:** Action not allowed.
+- **500 Internal Server Error:** An error occurred on the server.
+
+---
+
+## Socket.IO Events
+
+### `AccountCreationSuccess`
+Payload:
+```json
+{
+  "address": "0xYourWalletAddress",
+  "accessToken": "YourAccessToken"
+}
 ```
 
-Then run,
-```bash
-sudo docker-compose -f docker-compose.yml  up -d
-
+### `TXSent`
+Payload:
+```json
+{
+  "message": "Transaction details as JSON"
+}
 ```
 
-Interact with the container
+### `TXConfirmed`
+Payload:
+```json
+{
+  "message": "Transaction receipt as JSON"
+}
+```
 
-```bash
-sudo docker exec -it coordinator-api-1  bash
+---
 
+## Notes
+- Always include the `Authorization` header with the access token for protected endpoints.
+- Errors are returned in JSON format with an appropriate status code and message.
 ```
