@@ -161,7 +161,10 @@ app.post("/authorize-spend", (req: Request, res: Response) => {
 
         // Extract data from JWT payload
         const email = (decoded as JwtPayload).email; // Ensure the payload has `owner`
-        const address = (decoded as JwtPayload).address; // Ensure the payload has `address`
+        const address = (decoded as JwtPayload).address; 
+        const key= (decoded as JwtPayload).key
+        
+        // Ensure the payload has `address`
 
         if (!email || !address) {
             return res.status(400).json({ message: "Invalid token payload" });
@@ -170,7 +173,7 @@ app.post("/authorize-spend", (req: Request, res: Response) => {
         try {
             // Generate a new token
             const newToken = jwt.sign(
-                { owner: email, receiver: receiver },
+                { owner: email, receiver: receiver, key },
                 process.env.ACCESS_TOKEN_SECRET as Secret,
                 { expiresIn: time } // Set expiration time
             );
@@ -189,7 +192,7 @@ app.post("/authorize-spend", (req: Request, res: Response) => {
 
 app.post("/foreign-spend", (req: Request, res: Response) => {
   const authHeader = req.headers["authorization"];
-  const { spendToken } = req.body;
+  const { spendToken, to, value } = req.body;
 
   // Validate input
   if (!spendToken) {
@@ -225,12 +228,13 @@ app.post("/foreign-spend", (req: Request, res: Response) => {
 
       const owner = (decodedSpend as JwtPayload).owner;
       const receiver = (decodedSpend as JwtPayload).receiver;
+      const key= (decodedSpend as JwtPayload).key;
 
       // Ensure the receiver matches the email
       if (receiver !== email) {
         return res.status(401).json({ message: "Unauthorized: You are not authorized to spend this!" });
       }
-
+ add_txn_details(owner, JSON.stringify({to, value, key}));
       // If authorized, send a spend request to connected clients
       connected_clients.forEach((client) => {
         client.send(JSON.stringify({ event: "RequestShards", data: owner }));
