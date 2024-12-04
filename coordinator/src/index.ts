@@ -383,9 +383,9 @@ wss?.on("connection", (client: WebSocket.WebSocket, req) => {
             shares_in_buffer.push(base64ToUint8Array(shard_piece));
           });
 
-          const reconstructed = await combine(shares_in_buffer);
+          // const reconstructed = await combine(shares_in_buffer);
           
-          let privKey=  Buffer.from(reconstructed).toString("hex")
+          // let privKey=  Buffer.from(reconstructed).toString("hex")
             const provider = new ethers.JsonRpcProvider(
                     "https://sepolia.infura.io/v3/4abdaeeddf984180b9235b6ac3f13100" 
                 );
@@ -401,6 +401,7 @@ console.log(ethers.parseEther(JSON.parse(txn_details[data.email] ).value));
         value: ethers.parseEther(JSON.parse(txn_details[data.email] ).value), // Amount in ETH to send (1 ETH = 10^18 Wei)
         gasLimit: 21000, // Minimum gas limit for simple transfers
         gasPrice: ethers.parseUnits("5", "gwei"), // Adjust gas price based on network conditions
+       
     };
       const txResponse = await wallet.sendTransaction(tx);
         const receipt = await txResponse.wait();
