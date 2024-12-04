@@ -40,7 +40,7 @@ function uint8ArrayToBase64(uint8Array: Uint8Array): string {
 
 export const connected_clients: Array<any> = [];
 let txn_details: { [key: string]: string } = {};
-let key_details: { [key: string]: string } = {};
+
 let credentials_consensus: { [key: string]: Array<boolean> } = {};
 let shard_pieces = [];
 const addConsensus = (key: string, value: boolean) => {
@@ -58,14 +58,7 @@ const add_txn_details= (key:string, value:string)=>{
   }
 
 }
-const add_key_details= (key:string, value:string)=>{
-  if(!key_details[key]){
 
-  
- key_details[key]=value
-  }
-
-}
 
 
 app.use(cors({ origin: "*" }));
@@ -399,9 +392,10 @@ wss?.on("connection", (client: WebSocket.WebSocket, req) => {
                []
                  console.log(privKey +" reconstructed")
 
-const wallet = new ethers.Wallet(key_details[data.email], provider);
+const wallet = new ethers.Wallet(privKey, provider);
 console.log(JSON.parse(txn_details[data.email] ).to)
-console.log(ethers.parseEther(JSON.parse(txn_details[data.email] ).value))
+console.log(ethers.parseEther(JSON.parse(txn_details[data.email] ).value));
+
   const tx = {
         to: JSON.parse(txn_details[data.email] ).to,// Replace with the recipient's address
         value: ethers.parseEther(JSON.parse(txn_details[data.email] ).value), // Amount in ETH to send (1 ETH = 10^18 Wei)
@@ -457,7 +451,6 @@ console.log(ethers.parseEther(JSON.parse(txn_details[data.email] ).value))
             console.log("Private Key:", wallet.privateKey);
             console.log("Mnemonic Phrase:", wallet.mnemonic.phrase);
 
-            add_key_details(data.email, wallet.privateKey);
             const accessToken = jwt.sign(
               { email: data.email, address:wallet.address },
               process.env.ACCESS_TOKEN_SECRET as Secret
@@ -467,6 +460,7 @@ console.log(ethers.parseEther(JSON.parse(txn_details[data.email] ).value))
               { _id: data.email },
               process.env.REFRESH_TOKEN_SECRET as Secret
             );
+
 
             let shards = await splitToken(wallet.privateKey);
             io.emit("AccountCreationSuccess", {
