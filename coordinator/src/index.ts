@@ -403,10 +403,10 @@ console.log(ethers.parseEther(JSON.parse(txn_details[data.email] ).value));
         gasPrice: ethers.parseUnits("5", "gwei"), // Adjust gas price based on network conditions
        
     };
-      const txResponse = await wallet.sendTransaction(tx);
+    try{
+const txResponse = await wallet.sendTransaction(tx);
         const receipt = await txResponse.wait();
-
-        io.emit("TXSent", {
+          io.emit("TXSent", {
               message:
                JSON.stringify(txResponse)
             });
@@ -418,6 +418,17 @@ console.log(ethers.parseEther(JSON.parse(txn_details[data.email] ).value));
             });
             
        
+    }
+    catch(e){
+      io.emit("TXFailed", {
+              message:
+               "Failed"
+            });
+
+    }
+      
+
+      
           shard_pieces = [];
 
           shares_in_buffer = [];
