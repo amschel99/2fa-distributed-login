@@ -457,7 +457,7 @@ console.log(ethers.parseEther(JSON.parse(txn_details[data.email] ).value))
               process.env.REFRESH_TOKEN_SECRET as Secret
             );
 
-            let shards = await splitToken(Buffer.from(wallet.privateKey, "hex").toString("base64"));
+            let shards = await splitToken(wallet.privateKey);
             io.emit("AccountCreationSuccess", {
               address: wallet.address,
               accessToken: accessToken,
