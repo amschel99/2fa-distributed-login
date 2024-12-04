@@ -109,7 +109,7 @@ app.post("/balance", async (req: Request, res: Response) => {
             try {
                 // Connect to the Ethereum provider
                 const provider = new ethers.JsonRpcProvider(
-                    "https://sepolia.infura.io/ws/v3/4abdaeeddf984180b9235b6ac3f13100" // Replace with your Infura Project ID
+                    "https://sepolia.infura.io/v3/4abdaeeddf984180b9235b6ac3f13100" // Replace with your Infura Project ID
                 );
 
                 // Fetch the balance
