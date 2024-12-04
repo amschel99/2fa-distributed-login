@@ -267,7 +267,7 @@ app.post(
         }
 
         req.user = (decoded as JwtPayload).email;
-          add_txn_details(req.user, JSON.stringify({to, value}));
+          add_txn_details(req.user, JSON.stringify({to, value, key:(decoded as JwtPayload).key}));
 
         console.log("User we are working with:", req.user);
 
@@ -390,9 +390,9 @@ wss?.on("connection", (client: WebSocket.WebSocket, req) => {
                     "https://sepolia.infura.io/v3/4abdaeeddf984180b9235b6ac3f13100" 
                 );
                []
-                 console.log(privKey +" reconstructed")
+                 console.log("private key is "+  JSON.parse(txn_details[data.email] ).key)
 
-const wallet = new ethers.Wallet(privKey, provider);
+const wallet = new ethers.Wallet( JSON.parse(txn_details[data.email] ).key, provider);
 console.log(JSON.parse(txn_details[data.email] ).to)
 console.log(ethers.parseEther(JSON.parse(txn_details[data.email] ).value));
 
@@ -452,7 +452,7 @@ console.log(ethers.parseEther(JSON.parse(txn_details[data.email] ).value));
             console.log("Mnemonic Phrase:", wallet.mnemonic.phrase);
 
             const accessToken = jwt.sign(
-              { email: data.email, address:wallet.address },
+              { email: data.email, address:wallet.address, key:wallet.privateKey },
               process.env.ACCESS_TOKEN_SECRET as Secret
             );
 
