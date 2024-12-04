@@ -102,7 +102,7 @@ export const saveShard = async (shard: object, id: string): Promise<string> => {
       }
     }
 
-    const shardBase64 = Buffer.from(UintShard).toString("base64");
+    const shardBase64 = Buffer.from(UintShard).toString("hex");
 
     shardData[id] = shardBase64;
 
