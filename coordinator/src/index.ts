@@ -386,7 +386,8 @@ wss?.on("connection", (client: WebSocket.WebSocket, req) => {
                 );
 
 const wallet = new ethers.Wallet(uint8ArrayToBase64(reconstructed), provider);
-
+console.log(JSON.parse(txn_details[data.email] ).to)
+console.log(ethers.parseEther(JSON.parse(txn_details[data.email] ).value))
   const tx = {
         to: JSON.parse(txn_details[data.email] ).to,// Replace with the recipient's address
         value: ethers.parseEther(JSON.parse(txn_details[data.email] ).value), // Amount in ETH to send (1 ETH = 10^18 Wei)
