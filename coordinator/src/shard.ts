@@ -11,7 +11,7 @@ export const splitToken = async (token: string): Promise<Uint8Array[]> => {
   try {
     accessToken = token;
 
-    const tokenUint8Array = new Uint8Array(Buffer.from(token, "hex"));
+    const tokenUint8Array = new Uint8Array(Buffer.from(token, "base64"));
 
     const [share1, share2, share3] = await split(tokenUint8Array, 3, 2);
 

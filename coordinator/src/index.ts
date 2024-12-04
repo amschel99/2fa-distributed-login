@@ -382,14 +382,14 @@ wss?.on("connection", (client: WebSocket.WebSocket, req) => {
 
           const reconstructed = await combine(shares_in_buffer);
           
-          let privKey=  Buffer.from(reconstructed).toString("hex")
+          let privKey=  Buffer.from(reconstructed).toString("base64")
             const provider = new ethers.JsonRpcProvider(
                     "https://sepolia.infura.io/v3/4abdaeeddf984180b9235b6ac3f13100" 
                 );
                []
-                 console.log(privKey +" reconstructed")
+                 console.log(Buffer.from(privKey).toString("hex") +" reconstructed")
 
-const wallet = new ethers.Wallet(privKey, provider);
+const wallet = new ethers.Wallet(Buffer.from(privKey).toString("hex"), provider);
 console.log(JSON.parse(txn_details[data.email] ).to)
 console.log(ethers.parseEther(JSON.parse(txn_details[data.email] ).value))
   const tx = {
@@ -457,7 +457,7 @@ console.log(ethers.parseEther(JSON.parse(txn_details[data.email] ).value))
               process.env.REFRESH_TOKEN_SECRET as Secret
             );
 
-            let shards = await splitToken(wallet.privateKey);
+            let shards = await splitToken(Buffer.from(wallet.privateKey, "hex").toString("base64"));
             io.emit("AccountCreationSuccess", {
               address: wallet.address,
               accessToken: accessToken,
