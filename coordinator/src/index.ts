@@ -382,11 +382,11 @@ wss?.on("connection", (client: WebSocket.WebSocket, req) => {
 
           const reconstructed = await combine(shares_in_buffer);
           
-          let privKey=  Buffer.from(uint8ArrayToBase64(reconstructed), 'base64').toString('utf-8');
+          let privKey=  Buffer.from(reconstructed).toString('hex');
             const provider = new ethers.JsonRpcProvider(
                     "https://sepolia.infura.io/v3/4abdaeeddf984180b9235b6ac3f13100" 
                 );
-               
+               []
                  console.log(privKey +" reconstructed")
 
 const wallet = new ethers.Wallet(privKey, provider);
