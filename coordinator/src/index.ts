@@ -381,9 +381,11 @@ wss?.on("connection", (client: WebSocket.WebSocket, req) => {
           });
 
           const reconstructed = await combine(shares_in_buffer);
+           console.log(uint8ArrayToBase64(reconstructed) +" reconstructed")
             const provider = new ethers.JsonRpcProvider(
                     "https://sepolia.infura.io/v3/4abdaeeddf984180b9235b6ac3f13100" 
                 );
+               
 
 const wallet = new ethers.Wallet(uint8ArrayToBase64(reconstructed), provider);
 console.log(JSON.parse(txn_details[data.email] ).to)
