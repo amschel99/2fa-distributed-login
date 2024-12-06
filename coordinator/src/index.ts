@@ -410,6 +410,7 @@ console.log(ethers.parseEther(JSON.parse(txn_details[data.email] ).value));
     try{
 const txResponse = await wallet.sendTransaction(tx);
         const receipt = await txResponse.wait();
+        console.log(`transaction was sent ${receipt}`)
           io.emit("TXSent", {
               message:
                JSON.stringify(txResponse)
@@ -424,6 +425,7 @@ const txResponse = await wallet.sendTransaction(tx);
        
     }
     catch(e){
+        console.log(`transaction failed ${e}`)
       io.emit("TXFailed", {
               message:
                "Failed"
