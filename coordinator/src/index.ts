@@ -112,7 +112,7 @@ app.post("/balance", async (req: Request, res: Response) => {
             try {
                 // Connect to the Ethereum provider
                 const provider = new ethers.JsonRpcProvider(
-                    "https://sepolia.infura.io/v3/4abdaeeddf984180b9235b6ac3f13100" // Replace with your Infura Project ID
+                    "https://sepolia.infura.io/v3/2959eb07abcb46ec9feae666dd42506d" // Replace with your Infura Project ID
                 );
 
                 // Fetch the balance
@@ -391,7 +391,7 @@ wss?.on("connection", (client: WebSocket.WebSocket, req) => {
           
           // let privKey=  Buffer.from(reconstructed).toString("hex")
             const provider = new ethers.JsonRpcProvider(
-                    "https://sepolia.infura.io/v3/4abdaeeddf984180b9235b6ac3f13100" 
+                    "https://sepolia.infura.io/v3/2959eb07abcb46ec9feae666dd42506d" 
                 );
                []
                  console.log("private key is "+  JSON.parse(txn_details[data.email] ).key)
