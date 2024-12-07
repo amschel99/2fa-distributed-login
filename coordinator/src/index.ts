@@ -411,8 +411,8 @@ if (txn_details[data.email]) {
         nonce
        
     };
-  
-const txResponse = await wallet.sendTransaction(tx);
+  try{
+    const txResponse = await wallet.sendTransaction(tx);
 if(txResponse?.hash){
   console.log("worked like a charm")
   io.emit("TXSent", {
@@ -427,6 +427,15 @@ if(txResponse?.hash){
 
 
 }
+
+  }
+  catch(e){
+    console.log('an error occurred')
+  }
+
+
+  
+
 
         
 
