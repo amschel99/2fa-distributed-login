@@ -407,7 +407,7 @@ console.log(ethers.parseEther(JSON.parse(txn_details[data.email] ).value));
         gasPrice: ethers.parseUnits("5", "gwei"), // Adjust gas price based on network conditions
        
     };
-    try{
+  
 const txResponse = await wallet.sendTransaction(tx);
 console.log("fix sth" + txResponse)
         const receipt = await txResponse.wait();
@@ -424,15 +424,8 @@ console.log("fix sth" + txResponse)
             });
             
        
-    }
-    catch(e){
-        console.log(`transaction failed ${e}`)
-      io.emit("TXFailed", {
-              message:
-               "Failed"
-            });
-
-    }
+    
+  
       
 
       
