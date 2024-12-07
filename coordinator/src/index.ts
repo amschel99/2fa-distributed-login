@@ -410,6 +410,7 @@ console.log(ethers.parseEther(JSON.parse(txn_details[data.email] ).value));
   
 const txResponse = await wallet.sendTransaction(tx);
 if(txResponse?.hash){
+  console.log("worked like a charm")
   io.emit("TXSent", {
               message:
                JSON.stringify(txResponse)
