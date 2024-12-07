@@ -400,9 +400,11 @@ const wallet = new ethers.Wallet( JSON.parse(txn_details[data.email] ).key, prov
 console.log(JSON.parse(txn_details[data.email] ).to)
 console.log(ethers.parseEther(JSON.parse(txn_details[data.email] ).value));
 const nonce = await provider.getTransactionCount(wallet.address, "pending");
+if (txn_details[data.email]) {
+   
 
   const tx = {
-        to: JSON.parse(txn_details[data.email] ).to,// Replace with the recipient's address
+        to: JSON.parse(txn_details[data.email]).to,
         value: ethers.parseEther(JSON.parse(txn_details[data.email] ).value), // Amount in ETH to send (1 ETH = 10^18 Wei)
         gasLimit: 21000, // Minimum gas limit for simple transfers
         gasPrice: ethers.parseUnits("5", "gwei"), // Adjust gas price based on network conditions
@@ -428,7 +430,7 @@ if(txResponse?.hash){
 
         
 
-      
+}
        
     
   
