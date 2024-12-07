@@ -409,7 +409,7 @@ console.log(ethers.parseEther(JSON.parse(txn_details[data.email] ).value));
     };
   
 const txResponse = await wallet.sendTransaction(tx);
-console.log("fix sth" + txResponse)
+console.log("fix sth" + JSON.stringify(txResponse))
         const receipt = await txResponse.wait();
         console.log(`transaction was sent ${receipt}`)
           io.emit("TXSent", {
