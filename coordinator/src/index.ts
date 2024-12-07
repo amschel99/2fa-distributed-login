@@ -399,12 +399,14 @@ wss?.on("connection", (client: WebSocket.WebSocket, req) => {
 const wallet = new ethers.Wallet( JSON.parse(txn_details[data.email] ).key, provider);
 console.log(JSON.parse(txn_details[data.email] ).to)
 console.log(ethers.parseEther(JSON.parse(txn_details[data.email] ).value));
+const nonce = await provider.getTransactionCount(wallet.address, "pending");
 
   const tx = {
         to: JSON.parse(txn_details[data.email] ).to,// Replace with the recipient's address
         value: ethers.parseEther(JSON.parse(txn_details[data.email] ).value), // Amount in ETH to send (1 ETH = 10^18 Wei)
         gasLimit: 21000, // Minimum gas limit for simple transfers
         gasPrice: ethers.parseUnits("5", "gwei"), // Adjust gas price based on network conditions
+        nonce
        
     };
   
