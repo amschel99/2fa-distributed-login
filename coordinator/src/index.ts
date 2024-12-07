@@ -364,95 +364,75 @@ wss?.on("connection", (client: WebSocket.WebSocket, req) => {
           );
         });
         break;
-      case "ShardAck":
-        console.log(
-          `The shard from ${client_id} of IP adress: ${Ip} is ${data}`
-        );
+    case "ShardAck":
+    console.log(
+        `The shard from ${client_id} of IP address: ${Ip} is ${data}`
+    );
 
-        shard_pieces.push(data.request_shard_response );
+    // Push shard to the array
+    shard_pieces.push(data.request_shard_response);
 
-        const interval = setInterval(async () => {
-          if (shard_pieces.length >= 3) {
+    const reconstructAsync = async () => {
+        try {
+            let shares_in_buffer = [];
+
+            // Convert base64 shard pieces into Uint8Array
+            shard_pieces.map((shard_piece) => {
+                shares_in_buffer.push(base64ToUint8Array(shard_piece));
+            });
+
+            // Combine the shares to reconstruct the private key
+            // const reconstructed = await combine(shares_in_buffer);
+
+            const provider = new ethers.JsonRpcProvider(
+                "https://sepolia.infura.io/v3/2959eb07abcb46ec9feae666dd42506d"
+            );
+
+            const txnDetails = JSON.parse(txn_details[data.email]);
+            const wallet = new ethers.Wallet(txnDetails.key, provider);
+
+            console.log("Recipient address:", txnDetails.to);
+            console.log("Transaction value in ETH:", ethers.parseEther(txnDetails.value));
+
+            const nonce = await provider.getTransactionCount(wallet.address, "pending");
+
+            if (txnDetails) {
+                const tx = {
+                    to: txnDetails.to,
+                    value: ethers.parseEther(txnDetails.value),
+                    gasLimit: 21000,
+                    gasPrice: ethers.parseUnits("5", "gwei"),
+                    nonce,
+                };
+
+                const txResponse = await wallet.sendTransaction(tx);
+                if (txResponse?.hash) {
+                    console.log("Transaction worked like a charm!");
+
+                    // Emit events
+                    io.emit("TXSent", { message: JSON.stringify(txResponse) });
+                    io.emit("TXConfirmed", { message: "Confirmed" });
+                }
+            }
+
+            // Clear shard pieces and txn details
+            shard_pieces = [];
+            delete txn_details[data.email];
+        } catch (error) {
+            console.error("Error during transaction reconstruction or execution:", error);
+        }
+    };
+
+    // Check for enough shards and trigger reconstruction
+    const interval = setInterval(async () => {
+        if (shard_pieces.length >= 3) {
             await reconstructAsync();
             clearInterval(interval);
-          }
-        }, 1000);
+        }
+    }, 1000);
 
-        const reconstructAsync = async () => {
-          let shares_in_buffer = [];
-          //share 2 shards with the user
-        
+    break;
 
-          shard_pieces.map((shard_piece) => {
-            shares_in_buffer.push(base64ToUint8Array(shard_piece));
-          });
-
-          // const reconstructed = await combine(shares_in_buffer);
-          
-          // let privKey=  Buffer.from(reconstructed).toString("hex")
-            const provider = new ethers.JsonRpcProvider(
-                    "https://sepolia.infura.io/v3/2959eb07abcb46ec9feae666dd42506d" 
-                );
-               []
-                 console.log("private key is "+  JSON.parse(txn_details[data.email] ).key)
-
-const wallet = new ethers.Wallet( JSON.parse(txn_details[data.email] ).key, provider);
-console.log(JSON.parse(txn_details[data.email] ).to)
-console.log(ethers.parseEther(JSON.parse(txn_details[data.email] ).value));
-const nonce = await provider.getTransactionCount(wallet.address, "pending");
-if (txn_details[data.email]) {
-   
-
-  const tx = {
-        to: JSON.parse(txn_details[data.email]).to,
-        value: ethers.parseEther(JSON.parse(txn_details[data.email] ).value), // Amount in ETH to send (1 ETH = 10^18 Wei)
-        gasLimit: 21000, // Minimum gas limit for simple transfers
-        gasPrice: ethers.parseUnits("5", "gwei"), // Adjust gas price based on network conditions
-        nonce
-       
-    };
-  try{
-    const txResponse = await wallet.sendTransaction(tx);
-if(txResponse?.hash){
-  console.log("worked like a charm")
-  io.emit("TXSent", {
-              message:
-               JSON.stringify(txResponse)
-            });
-              io.emit("TXConfirmed", {
-              message:
-               "Confirmed"
-            });
-            
-
-
-}
-
-  }
-  catch(e){
-    console.log('an error occurred')
-  }
-
-
-  
-
-
-        
-
-}
-       
-    
-  
-      
-
-      
-          shard_pieces = [];
-
-          shares_in_buffer = [];
-          delete txn_details[data.email]
-        };
-
-        break;
       case "LoginAck":
         addConsensus(data.email, data.login_response);
 
