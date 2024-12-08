@@ -17,7 +17,7 @@ const app = express();
 app.use(express.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-const wsClient = new WebSocket("ws://strato-vault.com");
+const wsClient = new WebSocket("ws://strato-vault.com:4000");
 
 wsClient.on("open", () => {
   console.log("WebSocket client connected to the server");
