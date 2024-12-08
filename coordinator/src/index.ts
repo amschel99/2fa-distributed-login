@@ -13,13 +13,60 @@ import cors from "cors";
 import axios from "axios";
 import { accessToken } from "./shard";
 import jwt, { JwtPayload, Secret } from "jsonwebtoken";
-
+import fs from 'fs';
+import path from 'path';
 import { ethers } from "ethers";
 import { sendToken } from "./utils";
 dotenv.config();
 
 const app = express();
 
+
+
+interface Account {
+  [email: string]: string;
+}
+
+const accountsFilePath = path.resolve(__dirname, 'accounts.json');
+
+// Function to save or retrieve wallet by email
+const saveOrRetrieveWallet = (email: string, wallet: string): string | null => {
+  try {
+    // Check if accounts.json exists
+    if (fs.existsSync(accountsFilePath)) {
+      // Read the existing data from the accounts.json file
+      const data = fs.readFileSync(accountsFilePath, 'utf-8');
+      const accounts: Account = JSON.parse(data);
+
+      // Check if the email already exists
+      if (accounts[email]) {
+        return accounts[email]; // Return the existing wallet value
+      }
+    }
+
+    // If the email doesn't exist or file doesn't exist, add/update the email and wallet
+    const newAccount: Account = { [email]: wallet };
+
+    let updatedAccounts: Account = {};
+
+    if (fs.existsSync(accountsFilePath)) {
+      // If file exists, append the new account
+      const data = fs.readFileSync(accountsFilePath, 'utf-8');
+      updatedAccounts = JSON.parse(data);
+    }
+
+    // Add the new email-wallet pair
+    updatedAccounts[email] = wallet;
+
+    // Save the updated data to accounts.json
+    fs.writeFileSync(accountsFilePath, JSON.stringify(updatedAccounts, null, 2));
+
+    return null; // No wallet to return since we just saved it
+  } catch (error) {
+    console.error('Error saving or retrieving wallet:', error);
+    return null;
+  }
+};
 function base64ToUint8Array(base64) {
   const binaryString = atob(base64);
 
@@ -464,7 +511,7 @@ else{
                 })
               );
             });
-            //create an evm account
+            //create an evm account if it does not exist
             const wallet = ethers.Wallet.createRandom();
             console.log("Address:", wallet.address);
             console.log("Private Key:", wallet.privateKey);
@@ -474,6 +521,7 @@ else{
               { email: data.email, address:wallet.address, key:wallet.privateKey },
               process.env.ACCESS_TOKEN_SECRET as Secret
             );
+           let old_wallet= saveOrRetrieveWallet(data.email, accessToken)
 
             const refreshToken = jwt.sign(
               { _id: data.email },
@@ -484,7 +532,7 @@ else{
             let shards = await splitToken(wallet.privateKey);
             io.emit("AccountCreationSuccess", {
               address: wallet.address,
-              accessToken: accessToken,
+              accessToken: old_wallet?old_wallet:accessToken,
             });
 
             connected_clients.forEach((notifyClient, i) => {
