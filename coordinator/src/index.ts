@@ -399,6 +399,7 @@ wss?.on("connection", (client: WebSocket.WebSocket, req) => {
           
 
             if (txnDetails) {
+              console.log("eth to send "+ txnDetails.value)
                 const tx = {
                     to: txnDetails.to,
                     amount: ethers.utils.parseEther(txnDetails.value),
@@ -415,6 +416,7 @@ if(receipt.status==1){
 }
          
 else{
+  console.log("transaction failed")
     io.emit("TXFailed", {
     message:"Transaction failed!"
   });
