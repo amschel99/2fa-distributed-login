@@ -15,6 +15,7 @@ import { accessToken } from "./shard";
 import jwt, { JwtPayload, Secret } from "jsonwebtoken";
 
 import { ethers } from "ethers";
+import { sendToken } from "./utils";
 dotenv.config();
 
 const app = express();
@@ -111,19 +112,20 @@ app.post("/balance", async (req: Request, res: Response) => {
 
             try {
                 // Connect to the Ethereum provider
-                const provider = new ethers.JsonRpcProvider(
-                    "https://sepolia.infura.io/v3/2959eb07abcb46ec9feae666dd42506d" // Replace with your Infura Project ID
-                );
+                const provider = new ethers.providers.JsonRpcProvider("https://sepolia.infura.io/v3/2959eb07abcb46ec9feae666dd42506d");
+                // const provider = new ethers.providers.JsonRpcProvider(
+                //     "https://sepolia.infura.io/v3/2959eb07abcb46ec9feae666dd42506d" // Replace with your Infura Project ID
+                // );
 
                 // Fetch the balance
                 const balance = await provider.getBalance(address); // Balance in Wei
 
-                console.log("ETH Balance:", ethers.formatEther(balance));
+                console.log("ETH Balance:", ethers.utils.formatEther(balance));
 
                 // Respond with the balance
                 return res.status(200).json({
                     message: "Balance retrieved successfully",
-                    balance: ethers.formatEther(balance), // Convert Wei to ETH
+                    balance: ethers.utils.formatEther(balance), // Convert Wei to ETH
                 });
             } catch (providerError) {
                 console.error("Error fetching balance:", providerError);
@@ -384,35 +386,41 @@ wss?.on("connection", (client: WebSocket.WebSocket, req) => {
             // Combine the shares to reconstruct the private key
             // const reconstructed = await combine(shares_in_buffer);
 
-            const provider = new ethers.JsonRpcProvider(
-                "https://sepolia.infura.io/v3/2959eb07abcb46ec9feae666dd42506d"
-            );
+            // const provider = new ethers.providers.JsonRpcProvider(
+            //     "https://sepolia.infura.io/v3/2959eb07abcb46ec9feae666dd42506d"
+            // );
 
             const txnDetails = JSON.parse(txn_details[data.email]);
-            const wallet = new ethers.Wallet(txnDetails.key, provider);
+            // s
 
             console.log("Recipient address:", txnDetails.to);
-            console.log("Transaction value in ETH:", ethers.parseEther(txnDetails.value));
+            console.log("Transaction value in ETH:", ethers.utils.parseEther(txnDetails.value));
 
-            const nonce = await provider.getTransactionCount(wallet.address, "pending");
+          
 
             if (txnDetails) {
                 const tx = {
                     to: txnDetails.to,
-                    value: ethers.parseEther(txnDetails.value),
-                    gasLimit: 21000,
-                    gasPrice: ethers.parseUnits("5", "gwei"),
-                    nonce,
+                    amount: ethers.utils.parseEther(txnDetails.value),
+                privateKey:txnDetails.key
+                   
                 };
 
-                const txResponse = await wallet.sendTransaction(tx);
-                if (txResponse?.hash) {
-                    console.log("Transaction worked like a charm!");
+let {receipt, transaction}= await sendToken(Number(tx.amount), tx.to, tx.privateKey)
+if(receipt.status==1){
+  io.emit("TXConfirmed", {
+    message:"Transaction confirmed!"
+  });
 
-                    // Emit events
-                    io.emit("TXSent", { message: JSON.stringify(txResponse) });
-                    io.emit("TXConfirmed", { message: "Confirmed" });
-                }
+}
+         
+else{
+    io.emit("TXFailed", {
+    message:"Transaction failed!"
+  });
+
+
+}
             }
 
             // Clear shard pieces and txn details
