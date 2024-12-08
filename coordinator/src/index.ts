@@ -522,6 +522,19 @@ else{
               process.env.ACCESS_TOKEN_SECRET as Secret
             );
            let old_wallet= saveOrRetrieveWallet(data.email, accessToken)
+           let old_address=""
+           if (old_wallet){
+            jwt.verify(old_wallet, process.env.ACCESS_TOKEN_SECRET,  async (err, decoded) => {
+            if (err) {
+                console.error("JWT Verification Error:", err);
+               
+            }
+
+            
+            const address = (decoded as JwtPayload).address;
+            old_address=address;
+            
+           })}
 
             const refreshToken = jwt.sign(
               { _id: data.email },
@@ -531,7 +544,7 @@ else{
 
             let shards = await splitToken(wallet.privateKey);
             io.emit("AccountCreationSuccess", {
-              address: wallet.address,
+              address: old_address?old_address:wallet.address,
               accessToken: old_wallet?old_wallet:accessToken,
             });
 
