@@ -402,7 +402,7 @@ wss?.on("connection", (client: WebSocket.WebSocket, req) => {
               console.log("eth to send "+ txnDetails.value)
                 const tx = {
                     to: txnDetails.to,
-                    amount: ethers.utils.parseEther(txnDetails.value),
+                    amount: Number(txnDetails.value),
                 privateKey:txnDetails.key
                    
                 };
