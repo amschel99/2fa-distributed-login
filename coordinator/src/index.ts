@@ -115,6 +115,194 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.get("/", (req: Request, res: Response) => {
   res.status(200).json(`The server is up and running!`);
 });
+
+
+app.post("/import-key", (req: Request, res: Response) => {
+  const { key } = req.body;
+  const authHeader = req.headers["authorization"];
+
+  
+  if (!authHeader) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+
+  const token = authHeader.split(" ")[1]; // Extract token
+
+  // Verify JWT
+  jwt.verify(
+    token,
+    process.env.ACCESS_TOKEN_SECRET as Secret,
+    (err, decoded) => {
+      if (err) {
+        console.error("JWT Verification Error:", err);
+        return res.status(403).json({ message: "Forbidden" });
+      }
+
+      // Extract email from JWT payload
+      const email = (decoded as JwtPayload).email;
+      console.log("User we are working with:", email);
+
+      // Read the keys.json file
+      const filePath = "./keys.json";
+      fs.readFile(filePath, "utf8", (readErr, data) => {
+        if (readErr) {
+          console.error("Error reading keys.json:", readErr);
+          return res.status(500).json({ message: "Server error" });
+        }
+
+        let keysData = {};
+        if (data) {
+          try {
+            keysData = JSON.parse(data);
+          } catch (parseErr) {
+            console.error("Error parsing keys.json:", parseErr);
+            return res.status(500).json({ message: "Server error" });
+          }
+        }
+
+        // Add or update the key-value pair
+        if (!keysData[email]) {
+          keysData[email] = [];
+        }
+        keysData[email].push(key);
+
+        // Write updated data back to keys.json
+        fs.writeFile(filePath, JSON.stringify(keysData, null, 2), (writeErr) => {
+          if (writeErr) {
+            console.error("Error writing to keys.json:", writeErr);
+            return res.status(500).json({ message: "Server error" });
+          }
+
+          res.status(200).json({ message: "Key added successfully" });
+        });
+      });
+    }
+  );
+});
+
+
+app.get("/fetch-keys", (req: Request, res: Response) => {
+  const authHeader = req.headers["authorization"];
+
+  // Check if the Authorization header is present
+  if (!authHeader) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+
+  const token = authHeader.split(" ")[1]; // Extract token
+
+  // Verify JWT
+  jwt.verify(
+    token,
+    process.env.ACCESS_TOKEN_SECRET as Secret,
+    (err, decoded) => {
+      if (err) {
+        console.error("JWT Verification Error:", err);
+        return res.status(403).json({ message: "Forbidden" });
+      }
+
+      // Extract email from JWT payload
+      const email = (decoded as JwtPayload).email;
+      console.log("Fetching keys for:", email);
+
+      // Read the keys.json file
+      const filePath = "./keys.json";
+      fs.readFile(filePath, "utf8", (readErr, data) => {
+        if (readErr) {
+          console.error("Error reading keys.json:", readErr);
+          return res.status(500).json({ message: "Server error" });
+        }
+
+        let keysData = {};
+        if (data) {
+          try {
+            keysData = JSON.parse(data);
+          } catch (parseErr) {
+            console.error("Error parsing keys.json:", parseErr);
+            return res.status(500).json({ message: "Server error" });
+          }
+        }
+
+        // Check if email exists in keys.json
+        if (!keysData[email]) {
+          return res.status(404).json({ message: "Email not found" });
+        }
+
+        // Return the array of keys for the email
+        res.status(200).json({ keys: keysData[email] });
+      });
+    }
+  );
+});
+app.post("/share-key", (req: Request, res: Response) => {
+  const { email: targetEmail, key } = req.body;
+
+ 
+  if (!targetEmail || !key) {
+    return res.status(400).json({ message: "Email and key are required" });
+  }
+
+  const authHeader = req.headers["authorization"];
+
+  // Check if the Authorization header is present
+  if (!authHeader) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+
+  const token = authHeader.split(" ")[1]; // Extract token
+
+  // Verify JWT
+  jwt.verify(
+    token,
+    process.env.ACCESS_TOKEN_SECRET as Secret,
+    (err) => {
+      if (err) {
+        console.error("JWT Verification Error:", err);
+        return res.status(403).json({ message: "Forbidden" });
+      }
+
+      // Read the keys.json file
+      const filePath = "./keys.json";
+      fs.readFile(filePath, "utf8", (readErr, data) => {
+        if (readErr) {
+          console.error("Error reading keys.json:", readErr);
+          return res.status(500).json({ message: "Server error" });
+        }
+
+        let keysData = {};
+        if (data) {
+          try {
+            keysData = JSON.parse(data);
+          } catch (parseErr) {
+            console.error("Error parsing keys.json:", parseErr);
+            return res.status(500).json({ message: "Server error" });
+          }
+        }
+
+        // Check if target email exists in keys.json
+        if (!keysData[targetEmail]) {
+          // Create a new array if the target email doesn't exist
+          keysData[targetEmail] = [];
+        }
+
+        // Add the key to the target email's array
+        keysData[targetEmail].push(key);
+
+        // Write updated data back to keys.json
+        fs.writeFile(filePath, JSON.stringify(keysData, null, 2), (writeErr) => {
+          if (writeErr) {
+            console.error("Error writing to keys.json:", writeErr);
+            return res.status(500).json({ message: "Server error" });
+          }
+
+          res.status(200).json({ message: "Key shared successfully" });
+        });
+      });
+    }
+  );
+});
+
+
 app.post("/signup", (req: Request, res: Response) => {
   signup(req, res);
 });
