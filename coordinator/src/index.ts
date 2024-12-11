@@ -28,6 +28,7 @@ interface Account {
 }
 
 const accountsFilePath = path.resolve(__dirname, 'accounts.json');
+const keysPath=path.resolve(__dirname, 'keys.json');
 
 // Function to save or retrieve wallet by email
 const saveOrRetrieveWallet = (email: string, wallet: string): string | null => {
@@ -143,8 +144,8 @@ app.post("/import-key", (req: Request, res: Response) => {
       console.log("User we are working with:", email);
 
       // Read the keys.json file
-      const filePath = "./keys.json";
-      fs.readFile(filePath, "utf8", (readErr, data) => {
+     
+      fs.readFile(keysPath, "utf8", (readErr, data) => {
         if (readErr) {
           console.error("Error reading keys.json:", readErr);
           return res.status(500).json({ message: "Server error" });
@@ -206,8 +207,8 @@ app.get("/fetch-keys", (req: Request, res: Response) => {
       console.log("Fetching keys for:", email);
 
       // Read the keys.json file
-      const filePath = "./keys.json";
-      fs.readFile(filePath, "utf8", (readErr, data) => {
+     
+      fs.readFile(keysPath, "utf8", (readErr, data) => {
         if (readErr) {
           console.error("Error reading keys.json:", readErr);
           return res.status(500).json({ message: "Server error" });
@@ -261,9 +262,8 @@ app.post("/share-key", (req: Request, res: Response) => {
         return res.status(403).json({ message: "Forbidden" });
       }
 
-      // Read the keys.json file
-      const filePath = "./keys.json";
-      fs.readFile(filePath, "utf8", (readErr, data) => {
+    
+      fs.readFile(keysPath, "utf8", (readErr, data) => {
         if (readErr) {
           console.error("Error reading keys.json:", readErr);
           return res.status(500).json({ message: "Server error" });
