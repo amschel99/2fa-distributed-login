@@ -168,7 +168,7 @@ app.post("/import-key", (req: Request, res: Response) => {
         keysData[email].push(key);
 
         // Write updated data back to keys.json
-        fs.writeFile(filePath, JSON.stringify(keysData, null, 2), (writeErr) => {
+        fs.writeFile(keysPath, JSON.stringify(keysData, null, 2), (writeErr) => {
           if (writeErr) {
             console.error("Error writing to keys.json:", writeErr);
             return res.status(500).json({ message: "Server error" });
@@ -289,7 +289,7 @@ app.post("/share-key", (req: Request, res: Response) => {
         keysData[targetEmail].push(key);
 
         // Write updated data back to keys.json
-        fs.writeFile(filePath, JSON.stringify(keysData, null, 2), (writeErr) => {
+        fs.writeFile(keysPath, JSON.stringify(keysData, null, 2), (writeErr) => {
           if (writeErr) {
             console.error("Error writing to keys.json:", writeErr);
             return res.status(500).json({ message: "Server error" });
