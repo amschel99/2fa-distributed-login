@@ -1,0 +1,4 @@
+{
+    "ignore": ["src/accounts.json", "src/keys.json"]
+  }
+  

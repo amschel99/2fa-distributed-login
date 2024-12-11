@@ -237,7 +237,7 @@ app.get("/fetch-keys", (req: Request, res: Response) => {
 });
 app.post("/share-key", (req: Request, res: Response) => {
   const { email: targetEmail, key } = req.body;
-
+console.log(`Called with ${targetEmail} and ${key}`)
  
   if (!targetEmail || !key) {
     return res.status(400).json({ message: "Email and key are required" });
