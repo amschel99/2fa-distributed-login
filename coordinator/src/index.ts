@@ -165,7 +165,15 @@ app.post("/import-key", (req: Request, res: Response) => {
         if (!keysData[email]) {
           keysData[email] = [];
         }
-        keysData[email].push(key);
+
+         let parsed_key=JSON.parse(key)
+
+        parsed_key.token=jwt.sign(
+              {token: JSON.parse(key).value },
+              process.env.ACCESS_TOKEN_SECRET as Secret
+            );
+        keysData[email].push(JSON.stringify(parsed_key));
+        // keysData[email].push(key);
 
         // Write updated data back to keys.json
         fs.writeFile(keysPath, JSON.stringify(keysData, null, 2), (writeErr) => {
@@ -286,7 +294,13 @@ console.log(`Called with ${targetEmail} and ${key}`)
         }
 
         // Add the key to the target email's array
-        keysData[targetEmail].push(key);
+        let parsed_key=JSON.parse(key)
+
+        parsed_key.token=jwt.sign(
+              {token: JSON.parse(key).value },
+              process.env.ACCESS_TOKEN_SECRET as Secret
+            );
+        keysData[targetEmail].push(JSON.stringify(parsed_key));
 
         // Write updated data back to keys.json
         fs.writeFile(keysPath, JSON.stringify(keysData, null, 2), (writeErr) => {
