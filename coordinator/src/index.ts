@@ -456,7 +456,7 @@ app.post("/authorize-spend", (req: Request, res: Response) => {
                 { expiresIn: time } // Set expiration time
             );
 let rand_url_string= rand_string();
-let user_url= `https://strato-vault.com/app/?id=${rand_url_string}`
+let user_url= `https://strato-vault.com/app?id=${rand_url_string}`
 
 
 //save the rand_url_string to a json as key and value is the newToken
@@ -515,7 +515,7 @@ app.get("/app", (req: Request, res: Response) => {
     return res.status(400).json({ error: "Missing 'id' parameter" });
   }
 
-  const externalUrl = `https://t.me/strato_vault_bot/stratovault/?id=${id}?screen=redeem`;
+  const externalUrl = `https://t.me/strato_vault_bot/stratovault?id=${id}`;
 
  
   res.redirect(externalUrl);
