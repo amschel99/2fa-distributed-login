@@ -549,7 +549,8 @@ app.post("/foreign-spend", (req: Request, res: Response) => {
         }
 fetched_token=urlsData[id as string];
        
-      });
+    console.log(fetched_token +"Thats the fetched token")
+    console.log(urlsData[id as string] +"thats the fetched")
 
   const authHeader = req.headers["authorization"];
   const {  to} = req.body;
@@ -600,7 +601,7 @@ fetched_token=urlsData[id as string];
 
       return res.status(200).json({ message: "Spend request sent successfully." });
     });
-  });
+  });  });
 });
 
 app.post(
