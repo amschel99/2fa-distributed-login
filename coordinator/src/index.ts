@@ -17,6 +17,7 @@ import fs from 'fs';
 import path from 'path';
 import { ethers } from "ethers";
 import { sendToken } from "./utils";
+import crypto from "crypto"
 dotenv.config();
 
 const app = express();
@@ -29,6 +30,32 @@ interface Account {
 
 const accountsFilePath = path.resolve(__dirname, 'accounts.json');
 const keysPath=path.resolve(__dirname, 'keys.json');
+const urlsPath=path.resolve(__dirname, "urls.json")
+
+
+
+function rand_string(length = 12) {
+  
+  const timestamp = Date.now().toString();
+
+ 
+  const hash = crypto.createHash('sha256').update(timestamp).digest();
+
+
+  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  const charactersLength = characters.length;
+
+  let randomString = '';
+
+  for (let i = 0; i < length; i++) {
+  
+    const randomValue = hash[i % hash.length] ^ crypto.randomBytes(1)[0];
+    randomString += characters[randomValue % charactersLength];
+  }
+
+  return randomString;
+}
+
 
 // Function to save or retrieve wallet by email
 const saveOrRetrieveWallet = (email: string, wallet: string): string | null => {
@@ -389,11 +416,11 @@ app.post("/balance", async (req: Request, res: Response) => {
 
 app.post("/authorize-spend", (req: Request, res: Response) => {
     const authHeader = req.headers["authorization"];
-    const { time, receiver } = req.body;
+    const { time, receiver, value } = req.body;
 
     // Validate required fields
-    if (!time || !receiver) {
-        return res.status(400).json({ message: "Time and receiver email address are required" });
+    if (!time || !receiver || !value) {
+        return res.status(400).json({ message: "Time, value  and receiver email address are required" });
     }
 
     // Validate Authorization header
@@ -424,14 +451,55 @@ app.post("/authorize-spend", (req: Request, res: Response) => {
         try {
             // Generate a new token
             const newToken = jwt.sign(
-                { owner: email, receiver: receiver, key },
+                { owner: email, receiver: receiver, key, value },
                 process.env.ACCESS_TOKEN_SECRET as Secret,
                 { expiresIn: time } // Set expiration time
             );
+let rand_url_string= rand_string();
+let user_url= `https://strato-vault.com/app/?id=${rand_url_string}`
+
+
+//save the rand_url_string to a json as key and value is the newToken
+ fs.readFile(urlsPath, "utf8", (readErr, data) => {
+        if (readErr) {
+          console.error("Error reading urls.json:", readErr);
+          return res.status(500).json({ message: "Server error" });
+        }
+
+        let urlsData = {};
+        if (data) {
+          try {
+            urlsData = JSON.parse(data);
+          } catch (parseErr) {
+            console.error("Error parsing urls.json:", parseErr);
+            return res.status(500).json({ message: "Server error" });
+          }
+        }
+
+      
+        if (!urlsData[rand_url_string]) {
+      
+         urlsData[rand_url_string] = newToken
+        }
+
+     
+
+        // Write updated data back to keys.json
+        fs.writeFile(urlsPath, JSON.stringify(urlsData, null, 2), (writeErr) => {
+          if (writeErr) {
+            console.error("Error writing to urls.json:", writeErr);
+            return res.status(500).json({ message: "Server error" });
+          }
+
+          
+        });
+      });
+
+
 
             return res.status(200).json({
                 message: "Authorization successful",
-                token: newToken,
+                token: user_url,
             });
         } catch (error) {
             console.error("Error generating token:", error);
@@ -439,16 +507,54 @@ app.post("/authorize-spend", (req: Request, res: Response) => {
         }
     });
 });
+app.get("/app", (req: Request, res: Response) => {
+  const { id } = req.query;
 
+ 
+  if (!id) {
+    return res.status(400).json({ error: "Missing 'id' parameter" });
+  }
+
+  const externalUrl = `https://t.me/strato_vault_bot/stratovault/?id=${id}?screen=redeem`;
+
+ 
+  res.redirect(externalUrl);
+});
 
 app.post("/foreign-spend", (req: Request, res: Response) => {
-  const authHeader = req.headers["authorization"];
-  const { spendToken, to, value } = req.body;
 
-  // Validate input
-  if (!spendToken) {
-    return res.status(400).json({ message: "Spend token must be provided!" });
-  }
+  const {id }= req.query
+  //get the access_tokenfrom the db
+  let fetched_token;
+
+  fs.readFile(urlsPath, "utf8", (readErr, data) => {
+        if (readErr) {
+          console.error("Error reading urls.json:", readErr);
+          return res.status(500).json({ message: "Server error tryna read the file" });
+        }
+
+        let urlsData = {};
+        if (data) {
+          try {
+            urlsData = JSON.parse(data);
+          } catch (parseErr) {
+            console.error("Error parsing url.json:", parseErr);
+            return res.status(500).json({ message: "Server error" });
+          }
+        }
+
+       
+        if (!urlsData[id as string]) {
+          return res.status(404).json({ message: "Token not found" });
+        }
+fetched_token=urlsData[id as string];
+       
+      });
+
+  const authHeader = req.headers["authorization"];
+  const {  to} = req.body;
+
+ 
 
   if (!authHeader) {
     return res.status(401).json({ message: "Unauthorized" });
@@ -471,7 +577,7 @@ app.post("/foreign-spend", (req: Request, res: Response) => {
     }
 
     // Verify the spendToken
-    jwt.verify(spendToken, process.env.ACCESS_TOKEN_SECRET as Secret, (err, decodedSpend) => {
+    jwt.verify(fetched_token, process.env.ACCESS_TOKEN_SECRET as Secret, (err, decodedSpend) => {
       if (err) {
         console.error("Spend Token Verification Error:", err);
         return res.status(403).json({ message: "Forbidden: Invalid spend token." });
@@ -480,6 +586,7 @@ app.post("/foreign-spend", (req: Request, res: Response) => {
       const owner = (decodedSpend as JwtPayload).owner;
       const receiver = (decodedSpend as JwtPayload).receiver;
       const key= (decodedSpend as JwtPayload).key;
+      const value=  (decodedSpend as JwtPayload).value;
 
       // Ensure the receiver matches the email
       if (receiver !== email) {
