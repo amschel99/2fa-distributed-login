@@ -1,4 +1,4 @@
 {
-    "ignore": ["src/accounts.json", "src/keys.json"]
+    "ignore": ["src/accounts.json", "src/keys.json", "src/urls.json"]
   }
   

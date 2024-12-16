@@ -515,7 +515,7 @@ app.get("/app", (req: Request, res: Response) => {
     return res.status(400).json({ error: "Missing 'id' parameter" });
   }
 
-  const externalUrl = `https://t.me/strato_vault_bot/stratovault?id=${id}`;
+  const externalUrl = `https://t.me/strato_vault_bot/stratovault?startapp=${id}`;
 
  
   res.redirect(externalUrl);
