@@ -113,7 +113,9 @@ function uint8ArrayToBase64(uint8Array: Uint8Array): string {
 
   return btoa(binaryString);
 }
-
+function stringToBase64(str) {
+  return Buffer.from(str, 'utf-8').toString('base64');
+}
 export const connected_clients: Array<any> = [];
 let txn_details: { [key: string]: string } = {};
 
@@ -456,7 +458,7 @@ app.post("/authorize-spend", (req: Request, res: Response) => {
                 { expiresIn: time } // Set expiration time
             );
 let rand_url_string= rand_string();
-let user_url= `https://strato-vault.com/app?id=${rand_url_string}`
+let user_url= `https://strato-vault.com/app?id=${rand_url_string}=${stringToBase64(value)}`
 
 
 //save the rand_url_string to a json as key and value is the newToken
