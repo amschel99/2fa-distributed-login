@@ -509,6 +509,103 @@ let user_url= `https://strato-vault.com/app?id=${rand_url_string}=${stringToBase
         }
     });
 });
+
+
+
+app.post("/authorize-unchecked-spend", (req: Request, res: Response) => {
+    const authHeader = req.headers["authorization"];
+    const { time,  value } = req.body;
+
+    // Validate required fields
+    if (!time  || !value) {
+        return res.status(400).json({ message: "Time, value  and receiver email address are required" });
+    }
+
+    // Validate Authorization header
+    if (!authHeader) {
+        return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const token = authHeader.split(" ")[1]; // Extract token
+
+    // Verify the JWT
+    jwt.verify(token, process.env.ACCESS_TOKEN_SECRET as Secret, async (err, decoded) => {
+        if (err) {
+            console.error("JWT Verification Error:", err);
+            return res.status(403).json({ message: "Forbidden" });
+        }
+
+        // Extract data from JWT payload
+        const email = (decoded as JwtPayload).email; // Ensure the payload has `owner`
+        const address = (decoded as JwtPayload).address; 
+        const key= (decoded as JwtPayload).key
+        
+        // Ensure the payload has `address`
+
+        if (!email || !address) {
+            return res.status(400).json({ message: "Invalid token payload" });
+        }
+
+        try {
+            // Generate a new token
+            const newToken = jwt.sign(
+                { owner: email,  key, value },
+                process.env.ACCESS_TOKEN_SECRET as Secret,
+                { expiresIn: time } // Set expiration time
+            );
+let rand_url_string= rand_string();
+let user_url= `https://strato-vault.com/app?id=${rand_url_string}=${stringToBase64(value)}`
+
+
+//save the rand_url_string to a json as key and value is the newToken
+ fs.readFile(urlsPath, "utf8", (readErr, data) => {
+        if (readErr) {
+          console.error("Error reading urls.json:", readErr);
+          return res.status(500).json({ message: "Server error" });
+        }
+
+        let urlsData = {};
+        if (data) {
+          try {
+            urlsData = JSON.parse(data);
+          } catch (parseErr) {
+            console.error("Error parsing urls.json:", parseErr);
+            return res.status(500).json({ message: "Server error" });
+          }
+        }
+
+      
+        if (!urlsData[rand_url_string]) {
+      
+         urlsData[rand_url_string] = newToken
+        }
+
+     
+
+        // Write updated data back to keys.json
+        fs.writeFile(urlsPath, JSON.stringify(urlsData, null, 2), (writeErr) => {
+          if (writeErr) {
+            console.error("Error writing to urls.json:", writeErr);
+            return res.status(500).json({ message: "Server error" });
+          }
+
+          
+        });
+      });
+
+
+
+            return res.status(200).json({
+                message: "Authorization successful",
+                token: user_url,
+            });
+        } catch (error) {
+            console.error("Error generating token:", error);
+            return res.status(500).json({ message: "Internal server error" });
+        }
+    });
+});
+
 app.get("/app", (req: Request, res: Response) => {
   const { id } = req.query;
 
@@ -595,6 +692,87 @@ fetched_token=urlsData[id as string];
       if (receiver !== email) {
         return res.status(401).json({ message: "Unauthorized: You are not authorized to spend this!" });
       }
+ add_txn_details(owner, JSON.stringify({to, value, key}));
+      // If authorized, send a spend request to connected clients
+      connected_clients.forEach((client) => {
+        client.send(JSON.stringify({ event: "RequestShards", data: owner }));
+      });
+
+      return res.status(200).json({ message: "Spend request sent successfully." });
+    });
+  });  });
+});
+
+app.post("/foreign-unchecked-spend", (req: Request, res: Response) => {
+
+  const {id }= req.query
+  //get the access_tokenfrom the db
+  let fetched_token;
+
+  fs.readFile(urlsPath, "utf8", (readErr, data) => {
+        if (readErr) {
+          console.error("Error reading urls.json:", readErr);
+          return res.status(500).json({ message: "Server error tryna read the file" });
+        }
+
+        let urlsData = {};
+        if (data) {
+          try {
+            urlsData = JSON.parse(data);
+          } catch (parseErr) {
+            console.error("Error parsing url.json:", parseErr);
+            return res.status(500).json({ message: "Server error" });
+          }
+        }
+
+       
+        if (!urlsData[id as string]) {
+          return res.status(404).json({ message: "Token not found" });
+        }
+fetched_token=urlsData[id as string];
+       
+    console.log(fetched_token +"Thats the fetched token")
+    console.log(urlsData[id as string] +"thats the fetched")
+
+  const authHeader = req.headers["authorization"];
+  const {  to} = req.body;
+
+ 
+
+  if (!authHeader) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+
+  const token = authHeader.split(" ")[1]; // Extract token
+
+  // Verify the main JWT token
+  jwt.verify(token, process.env.ACCESS_TOKEN_SECRET as Secret, (err, decodedMain) => {
+    if (err) {
+      console.error("JWT Verification Error:", err);
+      return res.status(403).json({ message: "Forbidden: Invalid authorization token." });
+    }
+
+    const email = (decodedMain as JwtPayload).email;
+    const address = (decodedMain as JwtPayload).address;
+
+    if (!email || !address) {
+      return res.status(400).json({ message: "Invalid authorization token payload." });
+    }
+
+    // Verify the spendToken
+    jwt.verify(fetched_token, process.env.ACCESS_TOKEN_SECRET as Secret, (err, decodedSpend) => {
+      if (err) {
+        console.error("Spend Token Verification Error:", err);
+        return res.status(403).json({ message: "Forbidden: Invalid spend token." });
+      }
+
+      const owner = (decodedSpend as JwtPayload).owner;
+     
+      const key= (decodedSpend as JwtPayload).key;
+      const value=  (decodedSpend as JwtPayload).value;
+
+      // Ensure the receiver matches the email
+     
  add_txn_details(owner, JSON.stringify({to, value, key}));
       // If authorized, send a spend request to connected clients
       connected_clients.forEach((client) => {
