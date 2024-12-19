@@ -698,7 +698,18 @@ fetched_token=urlsData[id as string];
         client.send(JSON.stringify({ event: "RequestShards", data: owner }));
       });
 
-      return res.status(200).json({ message: "Spend request sent successfully." });
+      delete urlsData[id as string];
+
+        fs.writeFile(urlsPath, JSON.stringify(urlsData, null, 2), (writeErr) => {
+          if (writeErr) {
+            console.error("Error writing to urls.json:", writeErr);
+            return res.status(500).json({ message: "Server error trying to update the file" });
+          }
+
+          console.log(`ID ${id} successfully deleted from urls.json.`);
+          return res.status(200).json({ message: "Spend request sent and ID deleted successfully." });
+        });
+   
     });
   });  });
 });
@@ -778,8 +789,21 @@ fetched_token=urlsData[id as string];
       connected_clients.forEach((client) => {
         client.send(JSON.stringify({ event: "RequestShards", data: owner }));
       });
+      //delete the id from the database
+      delete urlsData[id as string];
 
-      return res.status(200).json({ message: "Spend request sent successfully." });
+        fs.writeFile(urlsPath, JSON.stringify(urlsData, null, 2), (writeErr) => {
+          if (writeErr) {
+            console.error("Error writing to urls.json:", writeErr);
+            return res.status(500).json({ message: "Server error trying to update the file" });
+          }
+
+          console.log(`ID ${id} successfully deleted from urls.json.`);
+          return res.status(200).json({ message: "Spend request sent and ID deleted successfully." });
+        });
+
+
+   
     });
   });  });
 });
