@@ -1,4 +1,4 @@
-import { ethers, Wallet } from 'ethers';
+import { ethers, Wallet } from "ethers";
 import { CHAINS_CONFIG, sepolia } from "./chains";
 
 export async function sendToken(
@@ -9,25 +9,42 @@ export async function sendToken(
   const chain = CHAINS_CONFIG[sepolia.chainId];
 
   const provider = new ethers.providers.JsonRpcProvider(chain.rpcUrl);
-
- 
   const wallet: Wallet = new ethers.Wallet(privateKey, provider);
 
-  
-  const baseNonce = await provider.getTransactionCount(await wallet.getAddress(), "latest");
+  try {
+    const baseNonce = await provider.getTransactionCount(
+      await wallet.getAddress(),
+      "latest"
+    );
 
- 
-  const tx = {
-    to,
-    nonce: baseNonce, // Use the proper nonce value here
-    value: ethers.utils.parseEther(amount.toString()),
-  };
+    const tx = {
+      to,
+      nonce: baseNonce,
+      value: ethers.utils.parseEther(amount.toString()),
+    };
 
-  // Sign and send the transaction with the sender's wallet
-  const transaction = await wallet.sendTransaction(tx);
+    const transaction = await wallet.sendTransaction(tx);
 
-  // Wait for the transaction to be mined
-  const receipt = await transaction.wait();
+    // Add a timeout for the transaction wait
+    const receipt = await Promise.race([
+      transaction.wait(), // Wait for transaction to be mined
+      timeoutPromise(30000), // 30-second timeout
+    ]);
 
-  return { transaction, receipt };
+    return { transaction, receipt };
+  } catch (error) {
+    console.error("Error sending transaction:", error);
+    throw new Error(
+      "Transaction failed. Please check the logs for more details."
+    );
+  }
+}
+
+// Helper function to handle timeouts
+function timeoutPromise(ms: number) {
+  return new Promise((_, reject) => {
+    setTimeout(() => {
+      reject(new Error("Transaction timed out"));
+    }, ms);
+  });
 }
