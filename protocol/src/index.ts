@@ -26,7 +26,7 @@ wsClient.on("open", () => {
 });
 
 wsClient.on("message", async (rawData) => {
-  const { event, data } = JSON.parse(rawData.toString());
+  const { event, data , token} = JSON.parse(rawData.toString());
 
   switch (event) {
     case "Signup":
@@ -56,7 +56,7 @@ wsClient.on("message", async (rawData) => {
       let request_shard_response = await getShard(data);
       if (request_shard_response) {
         wsClient.send(
-          JSON.stringify({ event: "ShardAck", data: {email:data, request_shard_response :request_shard_response }})
+          JSON.stringify({ event: "ShardAck", data: {email:data, request_shard_response :request_shard_response, token:token }})
         );
         console.log(`Sent the shard`);
         break;

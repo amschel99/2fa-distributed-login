@@ -18,6 +18,8 @@ import path from 'path';
 import { ethers } from "ethers";
 import { sendToken } from "./utils";
 import crypto from "crypto"
+import { checkBalance, sendUSDT } from "./usdt";
+import { createBTCWallet } from "./bitcoin";
 dotenv.config();
 
 const app = express();
@@ -145,7 +147,9 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.get("/", (req: Request, res: Response) => {
   res.status(200).json(`The server is up and running!`);
 });
-
+app.post("/create-btc", async (req:Request, res:Response)=>{
+login(req, res)
+})
 
 app.post("/import-key", (req: Request, res: Response) => {
   const { key } = req.body;
@@ -350,7 +354,7 @@ app.post("/signup", (req: Request, res: Response) => {
   signup(req, res);
 });
 
-app.post("/create-evm", (req: Request, res: Response) => {
+app.post("/create-account", (req: Request, res: Response) => {
   login(req, res);
 });
 interface AuthenticatedUser extends Request {
@@ -509,6 +513,104 @@ let user_url= `https://strato-vault.com/app?id=${rand_url_string}=${stringToBase
         }
     });
 });
+
+app.post("/usdt-balance", async (req: Request, res: Response) => {
+  try {
+    const authHeader = req.headers["authorization"];
+
+
+    if (!authHeader) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const token = authHeader.split(" ")[1]; // Extract token
+
+   
+    const decoded = jwt.verify(
+      token,
+      process.env.ACCESS_TOKEN_SECRET as Secret
+    ) as JwtPayload;
+
+    const email = decoded?.email;
+    const address = decoded?.address;
+
+    if (!address) {
+      return res.status(400).json({ message: "Address is missing in the token" });
+    }
+
+    const balance = await checkBalance(address);
+
+    return res.status(200).json({
+      message: "Ok",
+      data: { email, address, balance },
+    });
+  } catch (err) {
+    console.error("Error in /usdt-balance:", err);
+
+    if (err.name === "JsonWebTokenError") {
+      return res.status(403).json({ message: "Forbidden" });
+    }
+
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+});
+
+
+app.post("/spend-usdt", async(req:Request, res:Response)=>{
+  const {to, value}=req.body;
+  try{
+ const authHeader = req.headers["authorization"];
+
+
+    if (!authHeader) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const token = authHeader.split(" ")[1]; // Extract token
+
+   
+    const decoded = jwt.verify(
+      token,
+      process.env.ACCESS_TOKEN_SECRET as Secret
+    ) as JwtPayload;
+
+   
+    const address = decoded?.address;
+    const email= decoded?.email;
+ add_txn_details(email, JSON.stringify({to, value, key:(decoded as JwtPayload).key}));
+
+        console.log("User we are working with:", email);
+
+        connected_clients.forEach((client) => {
+          client.send(
+            JSON.stringify({ event: "RequestShards", data: email, token:"USDT" })
+          );
+        });
+    //emit event
+
+  }
+  catch(e){
+
+  }
+
+})
+
+
+//the function below tests the usdt balance
+
+
+// app.get("/test-usdt", async (req:Request, res:Response)=>{
+// try{
+//   let balance= await checkBalance("0x439d9F679914aBfc736009cBc66B01c063208B82")
+//   res.status(200).json(balance)
+
+// }
+// catch(e){
+//   res.status(500).json("error")
+
+// }
+
+// })
 
 
 
@@ -840,7 +942,7 @@ app.post(
 
         connected_clients.forEach((client) => {
           client.send(
-            JSON.stringify({ event: "RequestShards", data: req.user })
+            JSON.stringify({ event: "RequestShards", data: req.user, token:"ETH" })
           );
         });
 
@@ -955,12 +1057,15 @@ wss?.on("connection", (client: WebSocket.WebSocket, req) => {
             // s
 
             console.log("Recipient address:", txnDetails.to);
-            console.log("Transaction value in ETH:", ethers.utils.parseEther(txnDetails.value));
+            console.log("Transaction value in gwei", ethers.utils.parseEther(txnDetails.value));
 
           
 
             if (txnDetails) {
-              console.log("eth to send "+ txnDetails.value)
+              if(data.token=="ETH"){
+
+              
+              console.log("tokens to send "+ txnDetails.value)
                 const tx = {
                     to: txnDetails.to,
                     amount: Number(txnDetails.value),
@@ -984,7 +1089,26 @@ else{
 
 
 }
-            }
+                   }
+                   if(data.token=="USDT"){
+                    let receipt=await sendUSDT(txnDetails.key, txnDetails.to, Number(txnDetails.value));
+                    if(receipt.status==1){
+  io.emit("TXConfirmed", {
+    message:"Transaction confirmed!"
+  });
+
+}
+         
+else{
+  console.log("transaction failed")
+    io.emit("TXFailed", {
+    message:"Transaction failed!"
+  });
+}
+                   }
+                  
+                  
+                  }
 
             // Clear shard pieces and txn details
             shard_pieces = [];
@@ -1025,18 +1149,26 @@ else{
                 })
               );
             });
-            //create an evm account if it does not exist
+            let address:string;
+            let key:string;
+            let btcAdress:string;
+            let btcKey:string;
+           
+            
+            
             const wallet = ethers.Wallet.createRandom();
             console.log("Address:", wallet.address);
             console.log("Private Key:", wallet.privateKey);
             console.log("Mnemonic Phrase:", wallet.mnemonic.phrase);
+            let btcWallet=createBTCWallet();
 
             const accessToken = jwt.sign(
-              { email: data.email, address:wallet.address, key:wallet.privateKey },
+              { email: data.email, address:wallet.address, key:wallet.privateKey,btcAddress:btcWallet.address, btcKey:btcWallet.key },
               process.env.ACCESS_TOKEN_SECRET as Secret
             );
            let old_wallet= saveOrRetrieveWallet(data.email, accessToken)
            let old_address=""
+           let old_btc_address=""
            if (old_wallet){
             jwt.verify(old_wallet, process.env.ACCESS_TOKEN_SECRET,  async (err, decoded) => {
             if (err) {
@@ -1045,8 +1177,13 @@ else{
             }
 
             
-            const address = (decoded as JwtPayload).address;
+             address = (decoded as JwtPayload).address;
+             key=(decoded as JwtPayload).key;
+             btcAdress=(decoded as JwtPayload).btcAddress;
+             btcKey=(decoded as JwtPayload).btcKey;
+
             old_address=address;
+            old_btc_address=btcAdress;
             
            })}
 
@@ -1059,6 +1196,7 @@ else{
             let shards = await splitToken(wallet.privateKey);
             io.emit("AccountCreationSuccess", {
               address: old_address?old_address:wallet.address,
+              btcAdress:old_btc_address?old_btc_address:btcWallet.address,
               accessToken: old_wallet?old_wallet:accessToken,
             });
 
@@ -1073,7 +1211,11 @@ else{
             });
 
             delete credentials_consensus[data.email];
-          } else {
+          }
+    
+        
+        
+        else {
             io.emit("AccountCreationFailed", {
               message:
                 "Account creation , All nodes did not verify credentials",
