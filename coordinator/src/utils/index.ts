@@ -20,7 +20,7 @@ export async function sendToken(
     const tx = {
       to,
       nonce: baseNonce,
-      value: ethers.utils.parseEther(amount.toString()),
+      value: ethers.utils.parseEther(amount.toFixed(5)),
     };
 
     const transaction = await wallet.sendTransaction(tx);
