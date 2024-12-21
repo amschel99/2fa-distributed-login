@@ -803,9 +803,10 @@ console.log(id, nonce)
          jwt.verify(JSON.parse(keyWithURL).token, process.env.ACCESS_TOKEN_SECRET as Secret, async (err, decoded) => {
           if(err){
             console.log(err)
-            res.status(400).json(`The access to this secret expired`)
+            return res.status(400).json(`The access to this secret expired`)
           }
-          {
+
+       else    {
   console.log(decoded)
   const loginPayload = {};
     const loginHeaders = {
@@ -850,7 +851,7 @@ res.status(400).json(`The secret was invalid`)
          })
      
 
-     res.status(200).json(`It worsks`)
+     
       } else {
         return res.status(400).json(`The nonce and ID are invalid`)
         //do another thing here
