@@ -748,6 +748,7 @@ app.get("/secret", (req: Request, res: Response) => {
   if (!id) {
     return res.status(400).json({ error: "Missing 'id' parameter" });
   }
+  console.log(`The nonce is ${nonce}`)
 
   const externalUrl = `https://t.me/strato_vault_bot/stratovault?startapp=${id}=${nonce};xy`;
 
