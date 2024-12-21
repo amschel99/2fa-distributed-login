@@ -799,6 +799,7 @@ console.log(id, nonce)
 
 
       if (keyWithURL) {
+        console.log(JSON.parse(keyWithURL))
         // do the api call here
 
      res.status(200).json(`It worsks`)
