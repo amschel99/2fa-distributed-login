@@ -750,7 +750,7 @@ app.get("/secret", (req: Request, res: Response) => {
   }
   console.log(`The nonce is ${nonce}`)
 
-  const externalUrl = `https://t.me/strato_vault_bot/stratovault?startapp=${id}=${nonce};xy`;
+  const externalUrl = `https://t.me/strato_vault_bot/stratovault?startapp=${id};xy`;
 
  
   res.redirect(externalUrl);
