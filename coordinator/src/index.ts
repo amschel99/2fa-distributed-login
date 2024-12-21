@@ -19,7 +19,7 @@ import { ethers } from "ethers";
 import { sendToken } from "./utils";
 import crypto from "crypto"
 import { checkBalance, sendUSDT } from "./usdt";
-import { createBTCWallet } from "./bitcoin";
+import { createBTCWallet, getBitcoinBalance } from "./bitcoin";
 dotenv.config();
 
 const app = express();
@@ -152,7 +152,7 @@ login(req, res)
 })
 
 app.post("/import-key", (req: Request, res: Response) => {
-  const { key } = req.body;
+  const { key, type } = req.body;
   const authHeader = req.headers["authorization"];
 
   
@@ -277,7 +277,7 @@ app.get("/fetch-keys", (req: Request, res: Response) => {
   );
 });
 app.post("/share-key", (req: Request, res: Response) => {
-  const { email: targetEmail, key } = req.body;
+  const { email: targetEmail, key, time } = req.body;//time will be in seconds
 console.log(`Called with ${targetEmail} and ${key}`)
  
   if (!targetEmail || !key) {
@@ -329,10 +329,12 @@ console.log(`Called with ${targetEmail} and ${key}`)
         // Add the key to the target email's array
         let parsed_key=JSON.parse(key)
 
-        parsed_key.token=jwt.sign(
-              {token: JSON.parse(key).value },
-              process.env.ACCESS_TOKEN_SECRET as Secret
-            );
+      parsed_key.token = jwt.sign(
+    { token: parsed_key.value }, // Payload
+    process.env.ACCESS_TOKEN_SECRET as Secret, // Secret key
+    { expiresIn: time } // Expiration
+  );
+parsed_key.url=`https://strato-vault.com/secret?id=${stringToBase64(targetEmail)}?nonce=${rand_string()}`
         keysData[targetEmail].push(JSON.stringify(parsed_key));
 
         // Write updated data back to keys.json
@@ -353,6 +355,19 @@ console.log(`Called with ${targetEmail} and ${key}`)
 app.post("/signup", (req: Request, res: Response) => {
   signup(req, res);
 });
+app.get("/test-btc", async (req:Request, res:Response)=>{
+  try{
+    let wallet= await createBTCWallet();
+    let balance= await getBitcoinBalance("bc1q9flzg470g0tl7n5m5jxl49q59s9zg5ucsx9xl3", "ad2fbd3050cc25e97a0548126287480688815b0d2c9cd6154f0105bf91879f23")
+    res.status(200).json({address:wallet.address, balance})
+
+  }
+  catch(e){
+res.status(500).json(`An error occured`)
+  }
+});
+
+
 
 app.post("/create-account", (req: Request, res: Response) => {
   login(req, res);
@@ -383,11 +398,12 @@ app.post("/balance", async (req: Request, res: Response) => {
             // Extract data from JWT payload
             const email = (decoded as JwtPayload).email;
             const address = (decoded as JwtPayload).address;
+            const btcAddress= (decoded as JwtPayload).btcAddress
 
-            if (!address) {
+            if (!address || !btcAddress) {
                 return res
                     .status(400)
-                    .json({ message: "No Ethereum address found in token" });
+                    .json({ message: "No Ethereum and bitcoin  address found in token" });
             }
 
             console.log("User we are working with:", email);
@@ -401,13 +417,16 @@ app.post("/balance", async (req: Request, res: Response) => {
 
                 // Fetch the balance
                 const balance = await provider.getBalance(address); // Balance in Wei
+                const btcBalance= await getBitcoinBalance(btcAddress, "ad2fbd3050cc25e97a0548126287480688815b0d2c9cd6154f0105bf91879f23")
 
                 console.log("ETH Balance:", ethers.utils.formatEther(balance));
 
                 // Respond with the balance
                 return res.status(200).json({
                     message: "Balance retrieved successfully",
-                    balance: ethers.utils.formatEther(balance), // Convert Wei to ETH
+                    balance: ethers.utils.formatEther(balance),
+                    btcBalance:btcBalance
+                    // Convert Wei to ETH
                 });
             } catch (providerError) {
                 console.error("Error fetching balance:", providerError);
@@ -721,6 +740,73 @@ app.get("/app", (req: Request, res: Response) => {
  
   res.redirect(externalUrl);
 });
+
+app.get("/secret", (req: Request, res: Response) => {
+  const { id , nonce} = req.query;
+
+ 
+  if (!id) {
+    return res.status(400).json({ error: "Missing 'id' parameter" });
+  }
+
+  const externalUrl = `https://t.me/strato_vault_bot/stratovault?startapp=${id}=${nonce};xy?type=secret`;
+
+ 
+  res.redirect(externalUrl);
+});
+
+
+
+app.post("/use-key", async (req: Request, res: Response) => {
+  const { id, nonce } = req.query;
+
+  if (!id || !nonce) {
+    return res.status(400).json("Bad request, please provide an ID and Nonce");
+  }
+
+  
+  const email = Buffer.from(id as string, 'base64').toString('utf-8');
+
+  try {
+    fs.readFile(keysPath, "utf8", (readErr, data) => {
+      if (readErr) {
+        console.error("Error reading keys.json:", readErr);
+        return res.status(500).json({ message: "Server error" });
+      }
+
+      let keysData = {};
+      if (data) {
+        try {
+          keysData = JSON.parse(data);
+        } catch (parseErr) {
+          console.error("Error parsing keys.json:", parseErr);
+          return res.status(500).json({ message: "Server error" });
+        }
+      }
+
+      // Check if the email exists in keys.json
+      if (!keysData[email]) {
+        return res.status(404).json({ message: "Email not found" });
+      }
+
+      let keys = keysData[email]; // This is an array of keys
+
+      // Look for the object that contains the URL
+      const keyWithURL = keys.find((key: any) => key.url && key.url.includes(`${nonce}`));
+
+      if (keyWithURL) {
+     res.status(200).json(`It worsks`)
+      } else {
+        return res.status(400).json(`The nonce and ID are invalid`)
+        //do another thing here
+      }
+    });
+  } catch (e) {
+    console.error("Error:", e);
+    return res.status(500).json({ message: "Server error" });
+  }
+});
+
 
 app.post("/foreign-spend", (req: Request, res: Response) => {
 
