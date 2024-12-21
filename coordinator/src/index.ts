@@ -760,7 +760,7 @@ app.get("/secret", (req: Request, res: Response) => {
 
 app.post("/use-key", async (req: Request, res: Response) => {
   const { id, nonce } = req.query;
-
+console.log(id, nonce)
   if (!id || !nonce) {
     return res.status(400).json("Bad request, please provide an ID and Nonce");
   }
