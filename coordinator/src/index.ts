@@ -815,7 +815,8 @@ console.log(id, nonce)
     };
 
           console.log(decoded?.token)
-           const loginResponse = await axios.post(
+          try{
+ const loginResponse = await axios.post(
       "https://api-demo.airwallex.com/api/v1/authentication/login",
       loginPayload,
       { headers: loginHeaders }
@@ -837,6 +838,12 @@ console.log(id, nonce)
 
     console.log("Balances:", balanceResponse.data);
     return res.status(200).json(balanceResponse?.data)
+            
+          }
+          catch(e){
+res.status(400).json(`The secret was invalid`)
+          }
+          
           }
         
 
