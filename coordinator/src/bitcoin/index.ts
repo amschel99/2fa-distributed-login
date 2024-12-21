@@ -3,8 +3,6 @@ import { BIP32Factory } from 'bip32';
 import * as bip39 from 'bip39';
 import * as bitcoin from 'bitcoinjs-lib';
 import axios from "axios"
-import bitcore from "bitcore-lib"
-import * as btc from 'bitcoin-sdk-js';
 import * as ecc from 'tiny-secp256k1';
 import { ECPairFactory } from 'ecpair';
 
