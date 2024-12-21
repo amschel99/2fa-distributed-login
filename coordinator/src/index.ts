@@ -749,7 +749,7 @@ app.get("/secret", (req: Request, res: Response) => {
     return res.status(400).json({ error: "Missing 'id' parameter" });
   }
 
-  const externalUrl = `https://t.me/strato_vault_bot/stratovault?startapp=${id}=${nonce}`;
+  const externalUrl = `https://t.me/strato_vault_bot/stratovault?startapp=${id}=${nonce};xy`;
 
  
   res.redirect(externalUrl);
