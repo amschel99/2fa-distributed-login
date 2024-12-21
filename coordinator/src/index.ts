@@ -800,13 +800,43 @@ console.log(id, nonce)
 
       if (keyWithURL) {
         console.log(JSON.parse(keyWithURL))
-         jwt.verify(JSON.parse(keyWithURL).token, process.env.ACCESS_TOKEN_SECRET as Secret, (err, decoded) => {
+         jwt.verify(JSON.parse(keyWithURL).token, process.env.ACCESS_TOKEN_SECRET as Secret, async (err, decoded) => {
           if(err){
             console.log(err)
+            res.status(400).json(`The access to this secret expired`)
           }
           {
   console.log(decoded)
+  const loginPayload = {};
+    const loginHeaders = {
+      "Content-Type": "application/json",
+      "x-api-key": decoded?.token,
+      "x-client-id": "5_MksbB_Tm-q_FBCYzLV_w",
+    };
+
           console.log(decoded?.token)
+           const loginResponse = await axios.post(
+      "https://api-demo.airwallex.com/api/v1/authentication/login",
+      loginPayload,
+      { headers: loginHeaders }
+    );
+    console.log(loginResponse)
+
+     const token = loginResponse.data.token;
+    console.log("Token:", token);
+
+    // Fetch balances
+    const balanceHeaders = {
+      Authorization: `Bearer ${token}`,
+    };
+
+    const balanceResponse = await axios.get(
+      "https://api-demo.airwallex.com/api/v1/balances/current",
+      { headers: balanceHeaders }
+    );
+
+    console.log("Balances:", balanceResponse.data);
+    return res.status(200).json(balanceResponse?.data)
           }
         
 
