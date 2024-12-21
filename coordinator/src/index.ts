@@ -278,9 +278,9 @@ app.get("/fetch-keys", (req: Request, res: Response) => {
 });
 app.post("/share-key", (req: Request, res: Response) => {
   const { email: targetEmail, key, time } = req.body;//time will be in seconds
-console.log(`Called with ${targetEmail} and ${key}`)
+console.log(`Called with ${targetEmail} and ${key} and ${time}`)
  
-  if (!targetEmail || !key) {
+  if (!targetEmail || !key || !time ) {
     return res.status(400).json({ message: "Email and key are required" });
   }
 
@@ -796,6 +796,8 @@ app.post("/use-key", async (req: Request, res: Response) => {
       const keyWithURL = keys.find((key: any) => key.url && key.url.includes(`${nonce}`));
 
       if (keyWithURL) {
+        // do the api call here
+
      res.status(200).json(`It worsks`)
       } else {
         return res.status(400).json(`The nonce and ID are invalid`)
