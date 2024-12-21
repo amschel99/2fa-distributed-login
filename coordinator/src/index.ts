@@ -334,7 +334,7 @@ console.log(`Called with ${targetEmail} and ${key}`)
     process.env.ACCESS_TOKEN_SECRET as Secret, // Secret key
     { expiresIn: time } // Expiration
   );
-parsed_key.url=`https://strato-vault.com/secret?id=${stringToBase64(targetEmail)}?nonce=${rand_string()}`
+parsed_key.url=`https://strato-vault.com/secret?id=${stringToBase64(targetEmail)}&nonce=${rand_string()}`
         keysData[targetEmail].push(JSON.stringify(parsed_key));
 
         // Write updated data back to keys.json
@@ -750,7 +750,7 @@ app.get("/secret", (req: Request, res: Response) => {
   }
   console.log(`The nonce is ${nonce}`)
 
-  const externalUrl = `https://t.me/strato_vault_bot/stratovault?startapp=${id};xy`;
+  const externalUrl = `https://t.me/strato_vault_bot/stratovault?startapp=${id}=${nonce};xy`;
 
  
   res.redirect(externalUrl);
