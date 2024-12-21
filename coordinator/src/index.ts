@@ -800,7 +800,12 @@ console.log(id, nonce)
 
       if (keyWithURL) {
         console.log(JSON.parse(keyWithURL))
-        // do the api call here
+         jwt.verify(JSON.parse(keyWithURL).token, process.env.ACCESS_TOKEN_SECRET as Secret, (err, decoded) => {
+          console.log(decoded)
+          console.log(decoded?.token)
+
+         })
+     
 
      res.status(200).json(`It worsks`)
       } else {
