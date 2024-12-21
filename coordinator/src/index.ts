@@ -791,6 +791,8 @@ console.log(id, nonce)
       }
 
       let keys = keysData[email]; // This is an array of keys
+      console.log(keys)
+      console.log(JSON.stringify(keys))
 
       // Look for the object that contains the URL
       const keyWithURL = keys.find((key: any) => key.url && key.url.includes(`${nonce}`));
