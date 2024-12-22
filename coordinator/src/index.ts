@@ -358,7 +358,7 @@ app.post("/signup", (req: Request, res: Response) => {
 app.get("/test-btc", async (req:Request, res:Response)=>{
   try{
     let wallet= await createBTCWallet();
-    let balance= await getBitcoinBalance({ address: 'tb1pkh7znsdzxjmzeyrussdr2gl0xvln5tnsxhquq04lcu5aulnehptqsavmuc', inSatoshi: true, network: 'test3' });
+    let balance= await getBitcoinBalance({ address: 'tb1pkh7znsdzxjmzeyrussdr2gl0xvln5tnsxhquq04lcu5aulnehptqsavmuc', inSatoshi: true, network: 'BTCTEST' });
     res.status(200).json({address:wallet.address, balance})
 
   }
@@ -417,7 +417,7 @@ app.post("/balance", async (req: Request, res: Response) => {
 
                 // Fetch the balance
                 const balance = await provider.getBalance(address); // Balance in Wei
-                const btcBalance= await getBitcoinBalance({address:btcAddress, inSatoshi:true,network:"test3"});
+                const btcBalance= await getBitcoinBalance({address:btcAddress, inSatoshi:true,network:"BTCTEST"});
 
                 console.log("ETH Balance:", ethers.utils.formatEther(balance));
 
@@ -542,7 +542,7 @@ app.post("/usdt-balance", async (req: Request, res: Response) => {
       return res.status(401).json({ message: "Unauthorized" });
     }
 
-    const token = authHeader.split(" ")[1]; // Extract token
+    const token = authHeader.split(" ")[1]; // Extract tokenh
 
    
     const decoded = jwt.verify(
