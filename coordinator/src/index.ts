@@ -358,7 +358,7 @@ app.post("/signup", (req: Request, res: Response) => {
 app.get("/test-btc", async (req:Request, res:Response)=>{
   try{
     let wallet= await createBTCWallet();
-    let balance= await getBitcoinBalance({ address: 'tb1pkh7znsdzxjmzeyrussdr2gl0xvln5tnsxhquq04lcu5aulnehptqsavmuc', inSatoshi: true, network: 'BTCTEST' });
+    let balance= await getBitcoinBalance({ address: 'tb1pkh7znsdzxjmzeyrussdr2gl0xvln5tnsxhquq04lcu5aulnehptqsavmuc', inSatoshi: true, network: 'test3' });
     res.status(200).json({address:wallet.address, balance})
 
   }
@@ -417,7 +417,7 @@ app.post("/balance", async (req: Request, res: Response) => {
 
                 // Fetch the balance
                 const balance = await provider.getBalance(address); // Balance in Wei
-                const btcBalance= await getBitcoinBalance({address:btcAddress, inSatoshi:true,network:"BTCTEST"});
+                const btcBalance= await getBitcoinBalance({address:btcAddress, inSatoshi:true,network:"test3"});
 
                 console.log("ETH Balance:", ethers.utils.formatEther(balance));
 

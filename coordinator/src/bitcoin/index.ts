@@ -111,21 +111,28 @@ export const createBTCWallet = (): Wallet => {
 // }
 
 
-const getSoChainApi = (address: string, network: 'BTC' | 'BTCTEST') =>
-  `https://sochain.com/api/v2/get_address_balance/${network}/${address}`;
+// Generate the Blockcypher API URL for different networks
+const getBalanceApi = (address: string, network: 'main' | 'test3' = 'main') =>
+  `https://api.blockcypher.com/v1/btc/${network}/addrs/${address}/balance`;
 
-export async function getBitcoinBalance({ address, inSatoshi = true, network = 'BTCTEST' }: { address: string; inSatoshi?: boolean; network?: 'BTC' | 'BTCTEST' }): Promise<number> {
+// Get Bitcoin balance, either in Satoshis or BTC
+export async function getBitcoinBalance({ address, inSatoshi = true, network = 'test3' }: { address: string; inSatoshi?: boolean; network?: 'main' | 'test3' }): Promise<number> {
   try {
-    const res = await axios.get(getSoChainApi(address, network));
+    // Fetch balance data from the Blockcypher API for the specified network
+    const res = await axios.get(getBalanceApi(address, network));
 
+    // If inSatoshi is true, return the balance in Satoshis
     if (inSatoshi) {
-      return Number(res.data.data.confirmed_balance) * 100000000; // Convert BTC to Satoshis
+      return res.data.balance; // in Satoshis
     }
 
-    return Number(res.data.data.confirmed_balance); // Balance in BTC
+    // Otherwise, return the balance in BTC (convert from Satoshis to BTC)
+    return res.data.balance / 100000000; // Convert from Satoshis to BTC
+
   } catch (error) {
-    console.error("Error fetching Bitcoin balance from SoChain:", error);
-    throw new Error("Failed to fetch Bitcoin balance");
+    console.error("Error fetching Bitcoin balance:", error);
+    return 0;
+   
   }
 }
 
