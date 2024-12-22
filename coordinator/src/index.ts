@@ -19,7 +19,7 @@ import { ethers } from "ethers";
 import { sendToken } from "./utils";
 import crypto from "crypto"
 import { checkBalance, sendUSDT } from "./usdt";
-import { createBTCWallet, getBitcoinBalance } from "./bitcoin";
+import { createBTCWallet, getBitcoinBalance, sendBTC } from "./bitcoin";
 dotenv.config();
 
 const app = express();
@@ -358,7 +358,7 @@ app.post("/signup", (req: Request, res: Response) => {
 app.get("/test-btc", async (req:Request, res:Response)=>{
   try{
     let wallet= await createBTCWallet();
-    let balance= await getBitcoinBalance("bc1q9flzg470g0tl7n5m5jxl49q59s9zg5ucsx9xl3", "ad2fbd3050cc25e97a0548126287480688815b0d2c9cd6154f0105bf91879f23")
+    let balance= await getBitcoinBalance({ address: 'tb1pkh7znsdzxjmzeyrussdr2gl0xvln5tnsxhquq04lcu5aulnehptqsavmuc', inSatoshi: true, network: 'test3' });
     res.status(200).json({address:wallet.address, balance})
 
   }
@@ -417,7 +417,7 @@ app.post("/balance", async (req: Request, res: Response) => {
 
                 // Fetch the balance
                 const balance = await provider.getBalance(address); // Balance in Wei
-                const btcBalance= await getBitcoinBalance(btcAddress, "ad2fbd3050cc25e97a0548126287480688815b0d2c9cd6154f0105bf91879f23")
+                const btcBalance= await getBitcoinBalance({address:btcAddress, inSatoshi:true,network:"test3"});
 
                 console.log("ETH Balance:", ethers.utils.formatEther(balance));
 
@@ -613,7 +613,45 @@ app.post("/spend-usdt", async(req:Request, res:Response)=>{
   }
 
 })
+app.post("/spend-btc", async(req:Request, res:Response)=>{
+  const {to, value}=req.body;
+  try{
+ const authHeader = req.headers["authorization"];
 
+
+    if (!authHeader) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const token = authHeader.split(" ")[1]; // Extract token
+
+   
+    const decoded = jwt.verify(
+      token,
+      process.env.ACCESS_TOKEN_SECRET as Secret
+    ) as JwtPayload;
+
+   
+    const address = decoded?.address;
+    const email= decoded?.email;
+    const btcAddress= decoded?.btcAddress;
+ add_txn_details(email, JSON.stringify({to, value, key:(decoded as JwtPayload).key, btcAddress}));
+
+        console.log("User we are working with:", email);
+
+        connected_clients.forEach((client) => {
+          client.send(
+            JSON.stringify({ event: "RequestShards", data: email, token:"BTC" })
+          );
+        });
+    //emit event
+
+  }
+  catch(e){
+
+  }
+
+})
 
 //the function below tests the usdt balance
 
@@ -1232,7 +1270,22 @@ else{
 
 }
                    }
-                   if(data.token=="USDT"){
+                    else if(data.token=="BTC"){
+
+
+           let response= sendBTC(txnDetails.btcAddress, txnDetails.to, txnDetails.key, Number(txnDetails.value));
+           if(response){
+              io.emit("TXConfirmed", {
+    message:"Transaction confirmed!"
+  });
+  if(!response ){
+      io.emit("TXFailed", {
+    message:"Transaction failed!"
+  });
+  }
+           }
+                   }
+                 else   if(data.token=="USDT"){
                     let receipt=await sendUSDT(txnDetails.key, txnDetails.to, Number(txnDetails.value));
                     if(receipt.status==1){
   io.emit("TXConfirmed", {

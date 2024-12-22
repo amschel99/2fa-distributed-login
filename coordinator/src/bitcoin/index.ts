@@ -5,6 +5,8 @@ import * as bitcoin from 'bitcoinjs-lib';
 import axios from "axios"
 import * as ecc from 'tiny-secp256k1';
 import { ECPairFactory } from 'ecpair';
+import bitcore from "bitcore-lib"
+
 
 const ECPair = ECPairFactory(ecc);
 
@@ -67,141 +69,138 @@ export const createBTCWallet = (): Wallet => {
 
 
 
-interface BalanceHistoryItem {
-  time: number;
-  txs: number;
-  received: string;
-  sent: string;
-  sentToSelf: string;
-  rates?: Record<string, number>;
-}
+// interface BalanceHistoryItem {
+//   time: number;
+//   txs: number;
+//   received: string;
+//   sent: string;
+//   sentToSelf: string;
+//   rates?: Record<string, number>;
+// }
 
 
-export async function getBitcoinBalance(address: string, apiKey: string): Promise<number> {
-  const baseUrl = "https://rpc.ankr.com/http/btc_blockbook/api/v2/balancehistory/";
-  const url = `${baseUrl}${address}`;
+// export async function getBitcoinBalance(address: string, apiKey: string): Promise<number> {
+//   const baseUrl = "https://rpc.ankr.com/http/btc_blockbook/api/v2/balancehistory/";
+//   const url = `${baseUrl}${address}`;
 
+//   try {
+//     const response = await fetch(url, {
+//       method: "GET",
+//       headers: {
+//         Authorization: `Bearer ${apiKey}`,
+//       },
+//     });
+
+//     if (!response.ok) {
+//       throw new Error(`Failed to fetch balance history: ${response.statusText}`);
+//     }
+
+//     // Explicitly parse and cast the JSON response to the expected type
+//     const data:any = await response.json();
+// console.log(data)
+//     // Calculate the current balance
+//     const currentBalance = data.reduce((balance, item) => {
+//       return balance + parseInt(item.received, 10) - parseInt(item.sent, 10);
+//     }, 0);
+
+//     return currentBalance;
+//   } catch (error) {
+//     console.error("Error fetching balance history:", error);
+//     throw error;
+//   }
+// }
+
+
+// Generate the Blockcypher API URL for different networks
+const getBalanceApi = (address: string, network: 'main' | 'test3' = 'main') =>
+  `https://api.blockcypher.com/v1/btc/${network}/addrs/${address}/balance`;
+
+// Get Bitcoin balance, either in Satoshis or BTC
+export async function getBitcoinBalance({ address, inSatoshi = true, network = 'test3' }: { address: string; inSatoshi?: boolean; network?: 'main' | 'test3' }): Promise<number> {
   try {
-    const response = await fetch(url, {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-      },
-    });
+    // Fetch balance data from the Blockcypher API for the specified network
+    const res = await axios.get(getBalanceApi(address, network));
 
-    if (!response.ok) {
-      throw new Error(`Failed to fetch balance history: ${response.statusText}`);
+    // If inSatoshi is true, return the balance in Satoshis
+    if (inSatoshi) {
+      return res.data.balance; // in Satoshis
     }
 
-    // Explicitly parse and cast the JSON response to the expected type
-    const data:any = await response.json();
-console.log(data)
-    // Calculate the current balance
-    const currentBalance = data.reduce((balance, item) => {
-      return balance + parseInt(item.received, 10) - parseInt(item.sent, 10);
-    }, 0);
+    // Otherwise, return the balance in BTC (convert from Satoshis to BTC)
+    return res.data.balance / 100000000; // Convert from Satoshis to BTC
 
-    return currentBalance;
   } catch (error) {
-    console.error("Error fetching balance history:", error);
-    throw error;
+    console.error("Error fetching Bitcoin balance:", error);
+    throw new Error("Failed to fetch Bitcoin balance");
   }
 }
-/**
- * Sends Bitcoin from one address to another.
- * @param privateKeyWIF - Private key in Wallet Import Format (WIF)
- * @param destinationAddress - Address to send Bitcoin to
- * @param amount - Amount to send in satoshis
- * @param network - Bitcoin network (mainnet or testnet)
- * @returns Transaction ID of the broadcasted transaction
- */
-export const sendBTC = async (
-  privateKeyWIF: string,
-  destinationAddress: string,
-  amount: number,
-  network: bitcoin.Network
-): Promise<string> => {
+
+export const sendBTC = async (fromAddress: string, toAddress: string, privateKey: string, amount: number) => {
   try {
-    // Decode private key
-    const keyPair = ECPair.fromWIF(privateKeyWIF, network);
+    const network = "BTCTEST";
+    
+    // Fetch UTXOs
+    const fetchUTXOs = async () => {
+      const response = await axios.get(`https://sochain.com/api/v2/get_tx_unspent/${network}/${fromAddress}`);
+      return response.data.data.txs;
+    };
 
-    // Generate sender address
-    const senderAddress = bitcoin.payments.p2pkh({
-      pubkey:Buffer.from( keyPair.publicKey),
-      network,
-    }).address;
+    // Create transaction
+    const createTransaction = (utxos: any[], amount: number, inputs: any[], fromAddress: string, toAddress: string) => {
+      let totalAmountAvailable = 0;
+      let inputCount = 0;
 
-    if (!senderAddress) {
-      throw new Error('Failed to derive sender address');
-    }
-
-    // Fetch UTXOs for the sender's address
-    const utxoResponse = await axios.get<UTXO[]>(
-      `https://blockstream.info/${
-        network === bitcoin.networks.testnet ? 'testnet/' : ''
-      }api/address/${senderAddress}/utxo`
-    );
-
-    const utxos = utxoResponse.data;
-
-    if (utxos.length === 0) {
-      throw new Error('No UTXOs available to send funds');
-    }
-
-    // Create a new transaction
-    const psbt = new bitcoin.Psbt({ network });
-    let inputAmount = 0;
-
-    // Add UTXOs as inputs
-    utxos.forEach((utxo) => {
-      psbt.addInput({
-        hash: utxo.txid,
-        index: utxo.vout,
-        nonWitnessUtxo: Buffer.from(utxo.scriptpubkey, 'hex'),
+      utxos.forEach((element: any) => {
+        const utxo: any = {
+          satoshis: Math.floor(Number(element.value) * 100000000),
+          script: element.script_hex,
+          address: fromAddress,
+          txid: element.txid,
+          outputIndex: element.output_no
+        };
+        totalAmountAvailable += utxo.satoshis;
+        inputCount += 1;
+        inputs.push(utxo);
       });
-      inputAmount += utxo.value;
-    });
 
-    // Add the output (recipient)
-    psbt.addOutput({
-      address: destinationAddress,
-      value: amount,
-    });
+      const satoshiToSend = amount * 100000000;
+      const outputCount = 2;
+      const transactionSize = inputCount * 180 + outputCount * 34 + 10 - inputCount;
+      const fee = Math.round(transactionSize * 33);
 
-    // Calculate change and add change output if applicable
-    const fee = 10000; // Example fee in satoshis
-    const change = inputAmount - amount - fee;
+      if (totalAmountAvailable - satoshiToSend - fee < 0) {
+        throw new Error("Insufficient funds");
+      }
 
-    if (change > 0) {
-      psbt.addOutput({
-        address: senderAddress,
-        value: change,
+      const transaction = new bitcore.Transaction();
+      transaction.from(inputs)
+        .to(toAddress, satoshiToSend)
+        .change(fromAddress)
+        .fee(fee)
+        .sign(privateKey);
+
+      return transaction;
+    };
+
+    // Broadcast transaction
+    const broadcastTransaction = async (transaction: any) => {
+      const serializedTransaction = transaction.serialize();
+      const result = await axios.post(`https://sochain.com/api/v2/send_tx/${network}`, {
+        tx_hex: serializedTransaction
       });
-    }
+      return result.data.data; // return the result (e.g., transaction hash)
+    };
 
-   utxos.forEach((_, index) => {
-  psbt.signInput(index, {
-    publicKey: Buffer.from(keyPair.publicKey), // Convert Uint8Array to Buffer
-    sign: (hash: Buffer) => Buffer.from(keyPair.sign(hash)), // Convert Uint8Array to Buffer
-  });
-});
+    // Main flow
+    const utxos = await fetchUTXOs();
+    const inputs: any[] = [];
+    const transaction = createTransaction(utxos, amount, inputs, fromAddress, toAddress);
+    const result = await broadcastTransaction(transaction);
+    
+    return result; // Return the transaction result (e.g., transaction hash)
 
-
-    // Finalize and extract the transaction
-    psbt.finalizeAllInputs();
-    const rawTx = psbt.extractTransaction().toHex();
-
-    // Broadcast the transaction
-    const broadcastResponse = await axios.post<string>(
-      `https://blockstream.info/${
-        network === bitcoin.networks.testnet ? 'testnet/' : ''
-      }api/tx`,
-      rawTx
-    );
-
-    return broadcastResponse.data; // Transaction ID
   } catch (error) {
-    console.error('Error sending BTC:', error);
-    throw error;
+    console.error('Transaction failed:', error.message);
+    throw error; // Rethrow the error if you want the calling function to handle it
   }
 };
