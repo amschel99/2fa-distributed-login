@@ -26,27 +26,26 @@ const app = express();
 const cronjobs = [];
 const logic = async (nonce) => {
   try {
-    // Read the file
+    
     const data = await fs.promises.readFile(keysPath, "utf8");
 
-    // Parse the JSON data
     let keysData = JSON.parse(data);
 
-    // Iterate through the keys to find the secret by nonce and mark it as expired
+  
     let secretFound = false;
     for (const email in keysData) {
-      const keys = keysData[email]; // This is an array of keys
+      const keys = keysData[email]; 
       for (let i = 0; i < keys.length; i++) {
         let keyObj = JSON.parse(keys[i]);
         if (keyObj.url && keyObj.url.includes(nonce)) {
-          // Mark as expired
+         
           keyObj.expired = true;
           keys[i] = JSON.stringify(keyObj);
           secretFound = true;
           break;
         }
       }
-      if (secretFound) break; // Stop searching once the secret is found
+      if (secretFound) break; 
     }
 
     if (!secretFound) {
@@ -54,7 +53,7 @@ const logic = async (nonce) => {
       return { message: "Secret not found" };
     }
 
-    // Write the updated JSON back to the file
+   
     await fs.promises.writeFile(keysPath, JSON.stringify(keysData, null, 2));
     console.log(`Secret with nonce "${nonce}" has been marked as expired.`);
 
@@ -64,11 +63,10 @@ const logic = async (nonce) => {
     return { message: "Server error", error };
   }
 };
-function addCronJob(name, time, logic ) {
-  // Parse the time string to calculate delay in milliseconds
-  const unit = time.slice(-1); // Last character (s, m, h)
-  const value = parseInt(time.slice(0, -1), 10); // Everything except the last character
-  
+function addCronJob(name, time, logic, ...args) {
+  const unit = time.slice(-1); // Last character (time unit)
+  const value = parseInt(time.slice(0, -1), 10); // Numeric part of the time
+
   if (isNaN(value)) {
     console.error("Invalid time format. Use formats like '10s', '10m', '4h'.");
     return;
@@ -76,13 +74,13 @@ function addCronJob(name, time, logic ) {
 
   let delay;
   switch (unit) {
-    case "s": // Seconds
+    case "s":
       delay = value * 1000;
       break;
-    case "m": // Minutes
+    case "m":
       delay = value * 60 * 1000;
       break;
-    case "h": // Hours
+    case "h":
       delay = value * 60 * 60 * 1000;
       break;
     default:
@@ -93,10 +91,10 @@ function addCronJob(name, time, logic ) {
   const job = {
     name,
     runAt: new Date(Date.now() + delay),
-    logic, // Store the logic callback
+    logic, 
     timer: setTimeout(() => {
       try {
-        logic(); // Execute the logic
+        logic(...args); // Call the logic with arguments
       } catch (error) {
         console.error(`Error executing cronjob "${name}":`, error);
       }
@@ -107,6 +105,7 @@ function addCronJob(name, time, logic ) {
   cronjobs.push(job);
   console.log(`Cronjob "${name}" added to run in ${time} (${job.runAt}).`);
 }
+
 function removeCronJob(name) {
   const index = cronjobs.findIndex((job) => job.name === name);
   if (index !== -1) {
@@ -438,7 +437,7 @@ parsed_key.url=`https://strato-vault.com/secret?id=${stringToBase64(targetEmail)
             console.error("Error writing to keys.json:", writeErr);
             return res.status(500).json({ message: "Server error" });
           }
-addCronJob(rand_string(),time, logic(nonce) );
+addCronJob(rand_string(),time, logic, nonce );// handle expiry
           res.status(200).json({ message: "Key shared successfully" });
         });
       });
