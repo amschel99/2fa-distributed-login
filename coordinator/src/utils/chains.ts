@@ -29,3 +29,9 @@ export const polygonMainnet: Chain = {
     blockExplorerUrl: 'https://polygonscan.com',
     rpcUrl: 'https://rpc.ankr.com/polygon/ad2fbd3050cc25e97a0548126287480688815b0d2c9cd6154f0105bf91879f23',
 };
+export const celoMainnet: Chain = {
+    chainId: '42220',
+    name: 'Celo Mainnet',
+    blockExplorerUrl: 'https://explorer.celo.org',
+    rpcUrl: 'https://forno.celo.org',
+};

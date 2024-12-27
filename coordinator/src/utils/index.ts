@@ -1,5 +1,5 @@
 import { ethers, Wallet } from "ethers";
-import { CHAINS_CONFIG, sepolia } from "./chains";
+import { celoMainnet, CHAINS_CONFIG, sepolia } from "./chains";
 
 export async function sendToken(
   amount: number,

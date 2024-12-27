@@ -7,9 +7,8 @@ const clientPub = "RMPPUBK-471e157d471f6743f960d3adb304abb3-X";
 const secretKey = "RMPSEC-9faf5d4f4b622a01e5e9ce50c826230569b17f85cd089c32f56ebb8318c8a724-X";
 
 
-const provider = new ethers.providers.AnkrProvider(
-  "celo",
-  "ad2fbd3050cc25e97a0548126287480688815b0d2c9cd6154f0105bf91879f23"
+const provider = new ethers.providers.JsonRpcProvider(
+  "https://rpc.ankr.com/celo/ad2fbd3050cc25e97a0548126287480688815b0d2c9cd6154f0105bf91879f23"
 );
 
 export const quote= async (  token:string, amount:string, privateKey:string)=>{
