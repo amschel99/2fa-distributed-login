@@ -37,6 +37,7 @@
     "@apollo/server": "^4.9.5",
     "@babel/cli": "^7.23.4",
     "@babel/core": "^7.23.6",
+    "@oneramp/sdk": "^1.0.5",
     "axios": "^1.7.9",
     "bcrypt": "^5.1.1",
     "bcryptjs": "^2.4.3",
@@ -57,8 +58,6 @@
     "shamir-secret-sharing": "^0.0.3",
     "socket.io": "^4.8.1",
     "twilio": "^4.18.1",
-     "@oneramp/sdk": "^1.0.5"
-,
     "uuid": "^11.0.2",
     "ws": "^8.18.0"
   }

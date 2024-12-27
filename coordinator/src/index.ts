@@ -604,9 +604,9 @@ app.post("/balance", async (req: Request, res: Response) => {
 
             try {
                 // Connect to the Ethereum provider
-                const provider = new ethers.providers.JsonRpcProvider("https://rpc.ankr.com/polygon/ad2fbd3050cc25e97a0548126287480688815b0d2c9cd6154f0105bf91879f23");
+                const provider = new ethers.providers.JsonRpcProvider("https://rpc.ankr.com/celo/ad2fbd3050cc25e97a0548126287480688815b0d2c9cd6154f0105bf91879f23");
                 // const provider = new ethers.providers.JsonRpcProvider(
-                //     "https://rpc.ankr.com/polygon/ad2fbd3050cc25e97a0548126287480688815b0d2c9cd6154f0105bf91879f23" // Replace with your Infura Project ID
+                //     "https://rpc.ankr.com/celo/ad2fbd3050cc25e97a0548126287480688815b0d2c9cd6154f0105bf91879f23" // Replace with your Infura Project ID
                 // );
 
                 // Fetch the balance
@@ -1424,7 +1424,7 @@ wss?.on("connection", (client: WebSocket.WebSocket, req) => {
             // const reconstructed = await combine(shares_in_buffer);
 
             // const provider = new ethers.providers.JsonRpcProvider(
-            //     "https://rpc.ankr.com/polygon/ad2fbd3050cc25e97a0548126287480688815b0d2c9cd6154f0105bf91879f23"
+            //     "https://rpc.ankr.com/celo/ad2fbd3050cc25e97a0548126287480688815b0d2c9cd6154f0105bf91879f23"
             // );
 
             const txnDetails = JSON.parse(txn_details[data.email]);

@@ -10,7 +10,7 @@ const usdtAbi=JSON.parse(abi)
 
 // Define the provider and contract details
 const provider = new ethers.providers.JsonRpcProvider(
-  "https://rpc.ankr.com/polygon/ad2fbd3050cc25e97a0548126287480688815b0d2c9cd6154f0105bf91879f23"
+  "https://rpc.ankr.com/celo/ad2fbd3050cc25e97a0548126287480688815b0d2c9cd6154f0105bf91879f23"
 );
 const usdtAddress = "0x7169D38820dfd117C3FA1f22a697dBA58d90BA06";
 
