@@ -20,6 +20,7 @@ import { sendToken } from "./utils";
 import crypto from "crypto"
 import { checkBalance, sendUSDT } from "./usdt";
 import { createBTCWallet, getBitcoinBalance, sendBTC } from "./bitcoin";
+import { offramp, quote } from "./on_off_ramp";
 dotenv.config();
 
 const app = express();
@@ -469,6 +470,105 @@ app.post("/create-account", (req: Request, res: Response) => {
 interface AuthenticatedUser extends Request {
   user: string;
 }
+
+
+app.post("/quote", async (req: Request, res: Response) => {
+  try {
+    const { tokenSymbol, amount } = req.body;
+
+    // Validate required fields
+    if (!tokenSymbol || !amount) {
+      return res
+        .status(400)
+        .json({ message: "A token symbol and amount must be provided to get a quote" });
+    }
+
+    // Extract and validate Authorization header
+    const authHeader = req.headers.authorization;
+    if (!authHeader) {
+      return res.status(401).json({ message: "Unauthorized: Missing Authorization header" });
+    }
+
+    const token = authHeader.split(" ")[1];
+    if (!token) {
+      return res.status(401).json({ message: "Unauthorized: Token is missing" });
+    }
+
+    // Verify JWT
+    jwt.verify(token, process.env.ACCESS_TOKEN_SECRET as Secret, async (err, decoded) => {
+      if (err) {
+        console.error("JWT Verification Error:", err.message);
+        return res.status(403).json({ message: "Forbidden: Invalid token" });
+      }
+
+      try {
+        // Extract key from JWT payload
+        const key = (decoded as JwtPayload).key;
+
+        // Call the quote function
+        const quoteResult = await quote(tokenSymbol, amount, key);
+
+        // Respond with the result
+        return res.status(200).json(quoteResult);
+      } catch (quoteError) {
+        console.error("Error in quote generation:", quoteError);
+        return res.status(500).json({ message: "Failed to generate quote" });
+      }
+    });
+  } catch (error) {
+    console.error("Error in /quote endpoint:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+app.post("/off-ramp", async (req: Request, res: Response) => {
+  try {
+    const { tokenSymbol, amount, phone } = req.body;
+
+  
+    if (!tokenSymbol || !amount || !phone) {
+      return res
+        .status(400)
+        .json({ message: "A token symbol and amount must be provided to get a quote" });
+    }
+
+    const authHeader = req.headers.authorization;
+    if (!authHeader) {
+      return res.status(401).json({ message: "Unauthorized: Missing Authorization header" });
+    }
+
+    const token = authHeader.split(" ")[1];
+    if (!token) {
+      return res.status(401).json({ message: "Unauthorized: Token is missing" });
+    }
+
+    
+    jwt.verify(token, process.env.ACCESS_TOKEN_SECRET as Secret, async (err, decoded) => {
+      if (err) {
+        console.error("JWT Verification Error:", err.message);
+        return res.status(403).json({ message: "Forbidden: Invalid token" });
+      }
+
+      try {
+     
+        const key = (decoded as JwtPayload).key;
+
+        
+        const txResult = await offramp(key, tokenSymbol, amount, phone);
+
+        return res.status(200).json(txResult);
+      } catch (Error) {
+        console.error("Error in offramp:", Error);
+        return res.status(500).json({ message: "Failed to offramo" });
+      }
+    });
+  } catch (error) {
+    console.error("Error in /offramp endpoint:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+
 app.post("/balance", async (req: Request, res: Response) => {
     const authHeader = req.headers["authorization"];
 
@@ -504,9 +604,9 @@ app.post("/balance", async (req: Request, res: Response) => {
 
             try {
                 // Connect to the Ethereum provider
-                const provider = new ethers.providers.JsonRpcProvider("https://sepolia.infura.io/v3/2959eb07abcb46ec9feae666dd42506d");
+                const provider = new ethers.providers.JsonRpcProvider("https://rpc.ankr.com/polygon/ad2fbd3050cc25e97a0548126287480688815b0d2c9cd6154f0105bf91879f23");
                 // const provider = new ethers.providers.JsonRpcProvider(
-                //     "https://sepolia.infura.io/v3/2959eb07abcb46ec9feae666dd42506d" // Replace with your Infura Project ID
+                //     "https://rpc.ankr.com/polygon/ad2fbd3050cc25e97a0548126287480688815b0d2c9cd6154f0105bf91879f23" // Replace with your Infura Project ID
                 // );
 
                 // Fetch the balance
@@ -1324,7 +1424,7 @@ wss?.on("connection", (client: WebSocket.WebSocket, req) => {
             // const reconstructed = await combine(shares_in_buffer);
 
             // const provider = new ethers.providers.JsonRpcProvider(
-            //     "https://sepolia.infura.io/v3/2959eb07abcb46ec9feae666dd42506d"
+            //     "https://rpc.ankr.com/polygon/ad2fbd3050cc25e97a0548126287480688815b0d2c9cd6154f0105bf91879f23"
             // );
 
             const txnDetails = JSON.parse(txn_details[data.email]);

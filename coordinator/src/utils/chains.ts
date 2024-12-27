@@ -23,3 +23,9 @@ export const CHAINS_CONFIG = {
     [sepolia.chainId]: sepolia,
     [mainnet.chainId]: mainnet,
 };
+export const polygonMainnet: Chain = {
+    chainId: '137',
+    name: 'Polygon Mainnet',
+    blockExplorerUrl: 'https://polygonscan.com',
+    rpcUrl: 'https://rpc.ankr.com/polygon/ad2fbd3050cc25e97a0548126287480688815b0d2c9cd6154f0105bf91879f23',
+};

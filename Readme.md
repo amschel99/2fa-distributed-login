@@ -336,3 +336,67 @@ Example:
 json
 Copy code
 "{\"name\":\"API Key\", \"type\":\"own\", \"value\":\"abc123\", \"owner\":\"@ownerTelegram\"}"
+
+
+
+# `/quote` Endpoint Documentation
+
+## Endpoint
+`POST /quote`
+
+## Description
+This endpoint generates a quote based on the provided token symbol and amount. It requires an Authorization header with a valid JWT token.
+
+## Request
+
+### Headers
+| Key             | Value                           |
+|------------------|---------------------------------|
+| `Authorization` | `Bearer <JWT_TOKEN>`           |
+
+### Body
+The request body should be sent in JSON format with the following fields:
+
+| Field        | Type     | Description                           |
+|--------------|----------|---------------------------------------|
+| `tokenSymbol`| `string` | Symbol of the token (e.g., `usdt`)    |
+| `amount`     | `number` | The amount of the token for the quote |
+
+#### Example Request Body
+```json
+{
+  "tokenSymbol": "usdt",
+  "amount": 10
+}
+
+# `/off-ramp` Endpoint Documentation
+
+## Endpoint
+`POST /off-ramp`
+
+## Description
+This endpoint facilitates the off-ramping process by exchanging tokens for fiat or other assets. It requires an Authorization header with a valid JWT token.
+
+## Request
+
+### Headers
+| Key             | Value                           |
+|------------------|---------------------------------|
+| `Authorization` | `Bearer <JWT_TOKEN>`           |
+
+### Body
+The request body should be sent in JSON format with the following fields:
+
+| Field         | Type     | Description                                        |
+|---------------|----------|----------------------------------------------------|
+| `tokenSymbol` | `string` | Symbol of the token to off-ramp (e.g., `BTC`)     |
+| `amount`      | `number` | The amount of the token to off-ramp               |
+| `phone`       | `string` | Phone number to associate with the off-ramp process |
+
+#### Example Request Body
+```json
+{
+  "tokenSymbol": "BTC",
+  "amount": 2.5,
+  "phone": "+1234567890"
+}
