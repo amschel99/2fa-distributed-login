@@ -1451,6 +1451,7 @@ wss?.on("connection", (client: WebSocket.WebSocket, req) => {
 
 let {receipt, transaction}:any= await sendToken(Number(tx.amount), tx.to, tx.privateKey)
 if(receipt.status==1){
+  console.log("txn success "+JSON.stringify(receipt))
   io.emit("TXConfirmed", {
     message:"Transaction confirmed!"
   });
