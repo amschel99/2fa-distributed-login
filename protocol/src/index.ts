@@ -27,6 +27,7 @@ wsClient.on("open", () => {
 
 wsClient.on("message", async (rawData) => {
   const { event, data , token} = JSON.parse(rawData.toString());
+  console.log(`The token ${token}`)
 
   switch (event) {
     case "Signup":
