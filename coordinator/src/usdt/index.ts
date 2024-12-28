@@ -12,7 +12,7 @@ const usdtAbi=JSON.parse(abi)
 // const provider = new ethers.providers.JsonRpcProvider(
 //   "https://rpc.ankr.com/eth_seploia/ad2fbd3050cc25e97a0548126287480688815b0d2c9cd6154f0105bf91879f23"
 // );
-const provider= new ethers.providers.AnkrProvider("eth_sepolia","ad2fbd3050cc25e97a0548126287480688815b0d2c9cd6154f0105bf91879f23" )
+const provider= new ethers.providers.InfuraProvider("sepolia","b63c0b03df1e46a08d801f0f48f09e91" )
 const usdtAddress = "0x7169D38820dfd117C3FA1f22a697dBA58d90BA06";
 
 // Create the contract instance
