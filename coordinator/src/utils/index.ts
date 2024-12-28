@@ -13,7 +13,7 @@ const provider= new ethers.providers.InfuraProvider("sepolia","b63c0b03df1e46a08
   try {
     const baseNonce = await provider.getTransactionCount(
       await wallet.getAddress(),
-      "latest"
+      "pending"
     );
 
     const tx = {
