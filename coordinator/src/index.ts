@@ -155,6 +155,7 @@ function rand_string(length = 12) {
 
 // Function to save or retrieve wallet by email
 const saveOrRetrieveWallet = (email: string, wallet: string): string | null => {
+  console.log(`The email provided is `, email)
   try {
     // Check if accounts.json exists
     if (fs.existsSync(accountsFilePath)) {
