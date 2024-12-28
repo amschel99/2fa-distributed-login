@@ -1436,8 +1436,8 @@ wss?.on("connection", (client: WebSocket.WebSocket, req) => {
 
           
 
-            if (txnDetails) {{{
-              console.log(`The txn details are ${JSON.stringify(data)}`)
+            if (txnDetails) {
+              console.log(`The txn details are : ${JSON.stringify(data)}`)
               if(data.token=="ETH"){
 
               
