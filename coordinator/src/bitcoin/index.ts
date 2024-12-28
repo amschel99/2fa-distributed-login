@@ -130,7 +130,7 @@ export async function getBitcoinBalance({ address, inSatoshi = true, network = '
     return res.data.balance / 100000000; // Convert from Satoshis to BTC
 
   } catch (error) {
-    console.error("Error fetching Bitcoin balance:", error);
+
     return 0;
    
   }
@@ -201,7 +201,7 @@ export const sendBTC = async (fromAddress: string, toAddress: string, privateKey
     return result; // Return the transaction result (e.g., transaction hash)
 
   } catch (error) {
-    console.error('Transaction failed:', error.message);
+ 
     throw error; // Rethrow the error if you want the calling function to handle it
   }
 };

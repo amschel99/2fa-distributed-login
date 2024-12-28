@@ -24,7 +24,7 @@ export async function checkBalance(address: string): Promise<string> {
     const balance = await usdtContract.balanceOf(address);
     return ethers.utils.formatUnits(balance, 18); // Convert to human-readable format
   } catch (error) {
-    console.error("Error fetching balance:", error);
+  
     throw new Error("Unable to fetch balance");
   }
 }
@@ -41,15 +41,15 @@ export async function sendUSDT(senderPrivateKey, recipient, amount) {
 
 
     const tx = await usdtWithSigner.transfer(recipient, truncatedAmount);
-    console.log("Transaction sent! TX Hash:", tx.hash);
+   
 
  
     const receipt = await tx.wait();
-    console.log("Transaction confirmed! Receipt:", receipt);
+ 
 
     return receipt;
   } catch (error) {
-    console.error("Error sending USDT:", error);
+ 
     throw error;
   }
 }

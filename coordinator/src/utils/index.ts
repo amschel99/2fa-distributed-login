@@ -33,7 +33,7 @@ export async function sendToken(
 
     return { transaction, receipt };
   } catch (error) {
-    console.error("Error sending transaction:", error);
+    console.log(`TXN failed ${error}`)
     throw new Error(
       "Transaction failed. Please check the logs for more details."
     );
