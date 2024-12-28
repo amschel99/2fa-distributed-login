@@ -7,8 +7,7 @@ export async function sendToken(
   privateKey: string,
 ) {
   const chain = CHAINS_CONFIG[sepolia.chainId];
-
-  const provider = new ethers.providers.JsonRpcProvider(chain.rpcUrl);
+const provider= new ethers.providers.InfuraProvider("sepolia","b63c0b03df1e46a08d801f0f48f09e91" )
   const wallet: Wallet = new ethers.Wallet(privateKey, provider);
 
   try {
