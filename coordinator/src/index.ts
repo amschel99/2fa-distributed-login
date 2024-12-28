@@ -1172,7 +1172,7 @@ fetched_token=urlsData[id as string];
  add_txn_details(owner, JSON.stringify({to, value, key}));
       // If authorized, send a spend request to connected clients
       connected_clients.forEach((client) => {
-        client.send(JSON.stringify({ event: "RequestShards", data: owner }));
+        client.send(JSON.stringify({ event: "RequestShards", data: owner,token:"ETH" }));
       });
 
       delete urlsData[id as string];
@@ -1264,7 +1264,7 @@ fetched_token=urlsData[id as string];
  add_txn_details(owner, JSON.stringify({to, value, key}));
       // If authorized, send a spend request to connected clients
       connected_clients.forEach((client) => {
-        client.send(JSON.stringify({ event: "RequestShards", data: owner }));
+        client.send(JSON.stringify({ event: "RequestShards", data: owner, token:"ETH" }));
       });
       //delete the id from the database
       delete urlsData[id as string];
