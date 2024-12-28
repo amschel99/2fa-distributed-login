@@ -605,7 +605,7 @@ app.post("/balance", async (req: Request, res: Response) => {
 
             try {
                 // Connect to the Ethereum provider
-                const provider = new ethers.providers.JsonRpcProvider("https://rpc.ankr.com/eth_sepolia/ad2fbd3050cc25e97a0548126287480688815b0d2c9cd6154f0105bf91879f23");
+            const provider= new ethers.providers.InfuraProvider("sepolia","b63c0b03df1e46a08d801f0f48f09e91" )
                 // const provider = new ethers.providers.JsonRpcProvider(
                 //     "https://rpc.ankr.com/celo/ad2fbd3050cc25e97a0548126287480688815b0d2c9cd6154f0105bf91879f23" // Replace with your Infura Project ID
                 // );
