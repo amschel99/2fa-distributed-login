@@ -1412,7 +1412,15 @@ wss?.on("connection", (client: WebSocket.WebSocket, req) => {
     // Push shard to the array
     shard_pieces.push(data.request_shard_response);
 
+    // Define a closure to track if reconstructAsync has been called
+    let reconstructCalled = false;
+
     const reconstructAsync = async () => {
+        if (reconstructCalled) {
+            return; // Prevent the function from running if it's already been called
+        }
+        reconstructCalled = true; // Mark that the function is now called
+
         try {
             let shares_in_buffer = [];
 
@@ -1424,83 +1432,71 @@ wss?.on("connection", (client: WebSocket.WebSocket, req) => {
             // Combine the shares to reconstruct the private key
             // const reconstructed = await combine(shares_in_buffer);
 
-            // const provider = new ethers.providers.JsonRpcProvider(
-            //     "https://rpc.ankr.com/celo/ad2fbd3050cc25e97a0548126287480688815b0d2c9cd6154f0105bf91879f23"
-            // );
-
             const txnDetails = JSON.parse(txn_details[data.email]);
-            // s
 
             console.log("Recipient address:", txnDetails.to);
             console.log("Transaction value in gwei", ethers.utils.parseEther(txnDetails.value));
 
-          
-
             if (txnDetails) {
-              console.log(`The txn details are : ${JSON.stringify(data)}`)
-              if(data.token=="ETH"){
+                console.log(`The txn details are : ${JSON.stringify(data)}`);
+                if (data.token == "ETH") {
+                    console.log("tokens to send " + txnDetails.value);
+                    const tx = {
+                        to: txnDetails.to,
+                        amount: Number(txnDetails.value),
+                        privateKey: txnDetails.key,
+                    };
 
-              
-              console.log("tokens to send "+ txnDetails.value)
-                const tx = {
-                    to: txnDetails.to,
-                    amount: Number(txnDetails.value),
-                privateKey:txnDetails.key
-                   
-                };
-
-let {receipt, transaction}:any= await sendToken(Number(tx.amount), tx.to, tx.privateKey)
-if(receipt.status==1){
-  console.log("txn success "+JSON.stringify(receipt))
-  io.emit("TXConfirmed", {
-    message:"Transaction confirmed!"
-  });
-
-}
-         
-else{
-  console.log("transaction failed")
-    io.emit("TXFailed", {
-    message:"Transaction failed!"
-  });
-
-
-}
-                   }
-                    else if(data.token=="BTC"){
-
-
-           let response= sendBTC(txnDetails.btcAddress, txnDetails.to, txnDetails.key, Number(txnDetails.value));
-           if(response){
-              io.emit("TXConfirmed", {
-    message:"Transaction confirmed!"
-  });
-  if(!response ){
-      io.emit("TXFailed", {
-    message:"Transaction failed!"
-  });
-  }
-           }
-                   }
-                 else   if(data.token=="USDT"){
-                    let receipt=await sendUSDT(txnDetails.key, txnDetails.to, Number(txnDetails.value));
-                    if(receipt.status==1){
-  io.emit("TXConfirmed", {
-    message:"Transaction confirmed!"
-  });
-
-}
-         
-else{
-  console.log("transaction failed")
-    io.emit("TXFailed", {
-    message:"Transaction failed!"
-  });
-}
-                   }
-                  
-                  
-                  }
+                    let { receipt, transaction }: any = await sendToken(
+                        Number(tx.amount),
+                        tx.to,
+                        tx.privateKey
+                    );
+                    if (receipt.status == 1) {
+                        console.log("txn success " + JSON.stringify(receipt));
+                        io.emit("TXConfirmed", {
+                            message: "Transaction confirmed!",
+                        });
+                    } else {
+                        console.log("transaction failed");
+                        io.emit("TXFailed", {
+                            message: "Transaction failed!",
+                        });
+                    }
+                } else if (data.token == "BTC") {
+                    let response = sendBTC(
+                        txnDetails.btcAddress,
+                        txnDetails.to,
+                        txnDetails.key,
+                        Number(txnDetails.value)
+                    );
+                    if (response) {
+                        io.emit("TXConfirmed", {
+                            message: "Transaction confirmed!",
+                        });
+                    } else {
+                        io.emit("TXFailed", {
+                            message: "Transaction failed!",
+                        });
+                    }
+                } else if (data.token == "USDT") {
+                    let receipt = await sendUSDT(
+                        txnDetails.key,
+                        txnDetails.to,
+                        Number(txnDetails.value)
+                    );
+                    if (receipt.status == 1) {
+                        io.emit("TXConfirmed", {
+                            message: "Transaction confirmed!",
+                        });
+                    } else {
+                        console.log("transaction failed");
+                        io.emit("TXFailed", {
+                            message: "Transaction failed!",
+                        });
+                    }
+                }
+            }
 
             // Clear shard pieces and txn details
             shard_pieces = [];
