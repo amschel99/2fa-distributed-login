@@ -1,6 +1,36 @@
-import { Conversation } from "twilio/lib/twiml/VoiceResponse";
+const mongoose = require('mongoose');
 
-{
-    username:Conversation
-}
-//conversation is an array of of objects and each object has prompt and response
+// Define the schema for the History array
+const historySchema = new mongoose.Schema({
+  prompt: {
+    type: String,
+    required: true,
+  },
+  response: {
+    type: String,
+    required: true,
+  },
+});
+
+// Define the schema for the Conversation model
+const conversationSchema = new mongoose.Schema({
+  username: {
+    type: String,
+    required: true,
+ 
+  },
+  history: {
+    type: [historySchema], // Array of history objects
+    default: [],
+  },
+  conversation_id:{
+    type:String,
+    unique:true,
+    required:[true , "A conversation ID is required"]
+  }
+});
+
+// Create the Conversation model
+const Conversation = mongoose.model('Conversation', conversationSchema);
+
+module.exports = Conversation;

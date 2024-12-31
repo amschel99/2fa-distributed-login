@@ -22,7 +22,8 @@ This endpoint allows users to interact with an AI bot using OpenAI's GPT-4. It r
 ```json
 {
   "accessToken": "string", // Required: JWT access token for authentication
-  "user_prompt": "string"  // Required: The user's input or query
+  "user_prompt": "string",  // Required: The user's input or query
+  "conversation_id":"string"// you get this after calling use key and the type was OPENAI
 }
 ```
 ## Response
@@ -80,4 +81,17 @@ Body:
 ```json
 {
   "message": "Error processing stream"
-}```
+} 
+```
+
+
+# `/conversation-history` Endpoint Documentation
+
+This endpoint allows you to retrieve the conversation history for a given `conversation_id`. The conversation history is stored in the database and is accessible by providing a valid JWT token for authentication.
+
+## Endpoint
+
+POST /conversation-history
+
+Include converstion_id in the request body;
+ The response is an array of objects and each object has prompt as key and AI response as value

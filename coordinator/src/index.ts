@@ -1,4 +1,4 @@
-import express, { NextFunction, Request, Response } from "express";
+import express, { NextFunction, Request, response, Response } from "express";
 import dotenv from "dotenv";
 import bodyParser from "body-parser";
 import { v4 as uuidv4 } from "uuid";
@@ -1112,7 +1112,7 @@ res.status(400).json(`The secret was invalid`)
         });
 
         // JSON.parse(keyWithURL).token
-        return res.status(200).json({response:completion.choices[0].message, accessToken:  JSON.parse(keyWithURL).token});
+        return res.status(200).json({response:completion.choices[0].message, accessToken:  JSON.parse(keyWithURL).token, conversation_id:rand_string()});
     } catch (error) {
         
         console.error("Error with OpenAI API:", error);
@@ -1183,85 +1183,148 @@ res.status(400).json(`The secret was invalid`)
 
 
 
-app.post("/conversational-ai", (req: Request, res: Response) => {
-  const { accessToken, user_prompt } = req.body;
-
-  if (!accessToken || !user_prompt) {
-    return res.status(400).json({ message: "Access token and user_prompt are required" });
+app.post("/conversational-ai", async (req: Request, res: Response) => {
+  const authHeader = req.headers["authorization"];
+  
+  // Validate Authorization header
+  if (!authHeader) {
+    return res.status(401).json({ message: "Unauthorized" });
   }
 
+  const token = authHeader.split(" ")[1]; // Extract token
+
+  // Verify the JWT
   try {
-    jwt.verify(accessToken, process.env.ACCESS_TOKEN_SECRET as Secret, async (err, decoded: JwtPayload | undefined) => {
-      if (err) {
-        console.error(err);
-        return res.status(401).json({ message: "Your access to the AI bot has expired" });
+    const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET as Secret) as JwtPayload;
+    const username = decoded.email; // Extracting email from the decoded JWT payload
+
+    // Extract data from the request body
+    const { accessToken, user_prompt, conversation_id } = req.body;
+    
+    if (!accessToken || !user_prompt || !conversation_id) {
+      return res.status(400).json({ message: "Access token, conversation ID, and user_prompt are required" });
+    }
+
+    // Verify the access token
+    try {
+      const decodedAccessToken = jwt.verify(accessToken, process.env.ACCESS_TOKEN_SECRET as Secret) as JwtPayload;
+      const openAIApiKey = decodedAccessToken?.token;
+      if (!openAIApiKey) {
+        return res.status(401).json({ message: "Invalid token: OpenAI API key is missing" });
       }
 
-      try {
-        const openAIApiKey = decoded?.token;
-        if (!openAIApiKey) {
-          return res.status(401).json({ message: "Invalid token: OpenAI API key is missing" });
+      // Initialize OpenAI client
+      const openai = new OpenAI({
+        apiKey: openAIApiKey,
+      });
+ const prev_conversation = await Conversation.findOne({ conversation_id });
+      // Create a streamable response
+      const stream = await openai.chat.completions.create({
+        model: "gpt-4", // Ensure you're using the correct model
+        stream: true, // Enable streaming mode
+        messages: [
+          { role: "system", content: "You are a helpful assistant." },
+          { role: "user", content: `We had a conversation before and I'd love you to use that as context. The context of the conversation in json format is ${prev_conversation.history} which is an array of objects and each object has a prompt I asked as key and your response as value. Now answer my current prompt which is :${user_prompt}` },
+        ],
+      });
+
+      // Set headers for streaming
+      res.setHeader("Content-Type", "text/event-stream");
+      res.setHeader("Cache-Control", "no-cache");
+      res.setHeader("Connection", "keep-alive");
+
+      let fullResponse = ""; // Variable to accumulate the full response
+
+      // Check if the stream is a ReadableStream or Iterable
+      if (stream instanceof ReadableStream) {
+        const reader = stream.getReader();
+        const decoder = new TextDecoder();
+        let done = false;
+
+        while (!done) {
+          const { value, done: doneReading } = await reader.read();
+          done = doneReading;
+          const chunk = decoder.decode(value, { stream: true });
+
+          fullResponse += chunk; // Accumulate the response in the variable
+          res.write(chunk); // Write the chunk to the response stream
         }
 
-        const openai = new OpenAI({
-          apiKey: openAIApiKey,
-        });
+        // End the streaming response
+        console.log("Full Response:", fullResponse);
 
-        // Create a streamable response
-        const stream = await openai.chat.completions.create({
-          model: "gpt-4", // Ensure you're using the correct model
-          stream: true, // Enable streaming mode
-          messages: [
-            { role: "system", content: "You are a helpful assistant." },
-            {
-              role: "user",
-              content: user_prompt,
-            },
-          ],
-        });
+        // Optionally, save fullResponse to a database or other storage if needed
+        let history: Array<{ prompt: string; response: string }> = [];
+       
 
-        // Set headers for streaming
-        res.setHeader("Content-Type", "text/event-stream");
-        res.setHeader("Cache-Control", "no-cache");
-        res.setHeader("Connection", "keep-alive");
+        if (prev_conversation) {
+          history = prev_conversation.history || []; // Default to empty array if history is undefined
+        }
 
-        let fullResponse = ""; // Variable to accumulate the full response
+        const current_message = { prompt: user_prompt, response: fullResponse };
+        history.push(current_message);
 
-        // Check if the stream is a ReadableStream or Iterable
-        if (stream instanceof ReadableStream) {
-          const reader = stream.getReader();
-
-          // Use async iteration to consume the stream data
-          const decoder = new TextDecoder();
-          let done = false;
-          while (!done) {
-            const { value, done: doneReading } = await reader.read();
-            done = doneReading;
-            const chunk = decoder.decode(value, { stream: true });
-
-            fullResponse += chunk; // Accumulate the response in the variable
-            res.write(chunk); // Write the chunk to the response stream
-          }
-
-          res.end(); // End the streaming response
-
-          // Once the streaming is complete, you can log or save the fullResponse
-          console.log("Full Response:", fullResponse);
-
-          // Optionally, save fullResponse to a database or other storage if needed
-
+        // Save or update the conversation in the database
+        if (prev_conversation) {
+          prev_conversation.history = history;
+          await prev_conversation.save();
         } else {
-          // If it's not a ReadableStream, log the issue and return an error
-          console.error("Received data is not a ReadableStream");
-          res.status(500).json({ message: "Error processing stream" });
+          const newConversation = new Conversation({
+            conversation_id,
+            username,
+            history,
+          });
+          await newConversation.save();
         }
-      } catch (e) {
-        console.error("Error processing user prompt:", e);
-        return res.status(500).json({ message: "Internal server error" });
+
+        res.end();
+      } else {
+        // If it's not a ReadableStream, log the issue and return an error
+        console.error("Received data is not a ReadableStream");
+        res.status(500).json({ message: "Error processing stream" });
       }
-    });
+    } catch (err) {
+      console.error("Error verifying access token:", err);
+      return res.status(401).json({ message: "Your access to the AI bot has expired" });
+    }
+  } catch (err) {
+    console.error("JWT Verification Error:", err);
+    return res.status(403).json({ message: "Forbidden" });
+  }
+});
+
+app.get("/conversation-history", async (req: Request, res: Response) => {
+  const authHeader = req.headers["authorization"];
+  const { conversation_id } = req.query; // Extract conversation_id from query parameters
+  
+  // Validate conversation_id
+  if (!conversation_id) {
+    return res.status(400).json({ message: "Conversation ID is required" });
+  }
+
+  // Validate Authorization header
+  if (!authHeader) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+
+  const token = authHeader.split(" ")[1]; // Extract token
+
+  try {
+    // Verify the JWT
+    const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET as Secret) as JwtPayload;
+    const username = decoded.email; // Extracting email from the decoded JWT payload
+
+    // Find the conversation history
+    const conversation = await Conversation.findOne({ conversation_id });
+
+    if (!conversation) {
+      return res.status(404).json({ message: "Conversation not found" });
+    }
+
+    // Return the history from the conversation document
+    return res.status(200).json(conversation.history);
   } catch (e) {
-    console.error("Error verifying token:", e);
+    console.error(e); // Log the error
     return res.status(500).json({ message: "Internal server error" });
   }
 });
