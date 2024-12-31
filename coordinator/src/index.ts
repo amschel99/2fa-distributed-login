@@ -23,6 +23,7 @@ import { checkBalance, sendUSDT } from "./usdt";
 import { createBTCWallet, getBitcoinBalance, sendBTC } from "./bitcoin";
 import { offramp, quote } from "./on_off_ramp";
 import { connectDb } from "./dbconfig";
+import Conversation from "./openai/dbModel";
 dotenv.config();
 
 const app = express();
