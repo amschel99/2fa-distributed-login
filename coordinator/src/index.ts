@@ -1037,7 +1037,7 @@ console.log(id, nonce)
 
       if (keyWithURL) {
         console.log(JSON.parse(keyWithURL))
-         jwt.verify(JSON.parse(keyWithURL).token, process.env.ACCESS_TOKEN_SECRET as Secret, async (err, decoded) => {
+         jwt.verify(JSON.parse(keyWithURL).token, process.env.ACCESS_TOKEN_SECRET as Secret, async (err, decoded:JwtPayload) => {
           if(err){
             console.log(err)
             return res.status(400).json(`The access to this secret expired`)
@@ -1107,8 +1107,8 @@ res.status(400).json(`The secret was invalid`)
             ],
         });
 
-        
-        return res.status(200).json(completion.choices[0].message);
+        // JSON.parse(keyWithURL).token
+        return res.status(200).json({response:completion.choices[0].message, accessToken:  JSON.parse(keyWithURL).token});
     } catch (error) {
         
         console.error("Error with OpenAI API:", error);
@@ -1177,6 +1177,80 @@ res.status(400).json(`The secret was invalid`)
 });
 
 
+
+
+app.post("/conversational-ai", (req: Request, res: Response) => {
+  const { accessToken, user_prompt } = req.body;
+
+  if (!accessToken || !user_prompt) {
+    return res.status(400).json({ message: "Access token and user_prompt are required" });
+  }
+
+  try {
+    jwt.verify(accessToken, process.env.ACCESS_TOKEN_SECRET as Secret, async (err, decoded: JwtPayload | undefined) => {
+      if (err) {
+        console.error(err);
+        return res.status(401).json({ message: "Your access to the AI bot has expired" });
+      }
+
+      try {
+        const openAIApiKey = decoded?.token;
+        if (!openAIApiKey) {
+          return res.status(401).json({ message: "Invalid token: OpenAI API key is missing" });
+        }
+
+        const openai = new OpenAI({
+          apiKey: openAIApiKey,
+        });
+
+        // Create a streamable response
+        const stream = await openai.chat.completions.create({
+          model: "gpt-4", // Ensure you're using the correct model
+          stream: true, // Enable streaming mode
+          messages: [
+            { role: "system", content: "You are a helpful assistant." },
+            {
+              role: "user",
+              content: user_prompt,
+            },
+          ],
+        });
+
+        // Set headers for streaming
+        res.setHeader("Content-Type", "text/event-stream");
+        res.setHeader("Cache-Control", "no-cache");
+        res.setHeader("Connection", "keep-alive");
+
+        // Check if the stream is a ReadableStream or Iterable
+        if (stream instanceof ReadableStream) {
+          const reader = stream.getReader();
+
+          // Use async iteration to consume the stream data
+          const decoder = new TextDecoder();
+          let done = false;
+          while (!done) {
+            const { value, done: doneReading } = await reader.read();
+            done = doneReading;
+            const chunk = decoder.decode(value, { stream: true });
+            res.write(chunk); // Write the chunk to the response stream
+          }
+
+          res.end(); // End the streaming response
+        } else {
+          // If it's not a ReadableStream, log the issue and return an error
+          console.error("Received data is not a ReadableStream");
+          res.status(500).json({ message: "Error processing stream" });
+        }
+      } catch (e) {
+        console.error("Error processing user prompt:", e);
+        return res.status(500).json({ message: "Internal server error" });
+      }
+    });
+  } catch (e) {
+    console.error("Error verifying token:", e);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+});
 app.post("/foreign-spend", (req: Request, res: Response) => {
 
   const {id }= req.query
