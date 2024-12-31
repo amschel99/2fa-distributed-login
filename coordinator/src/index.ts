@@ -22,6 +22,7 @@ import crypto from "crypto"
 import { checkBalance, sendUSDT } from "./usdt";
 import { createBTCWallet, getBitcoinBalance, sendBTC } from "./bitcoin";
 import { offramp, quote } from "./on_off_ramp";
+import { connectDb } from "./dbconfig";
 dotenv.config();
 
 const app = express();
@@ -249,6 +250,7 @@ login(req, res)
 })
 
 app.post("/import-key", (req: Request, res: Response) => {
+  //AIRWALLEX , OPENAI
   const { key, type } = req.body;
   const authHeader = req.headers["authorization"];
 
@@ -375,6 +377,7 @@ app.get("/fetch-keys", (req: Request, res: Response) => {
   );
 });
 app.post("/share-key", (req: Request, res: Response) => {
+  //AIRWALLEX, OPENAI
   const { email: targetEmail, key, time, type } = req.body;//time will be in seconds
 console.log(`Called with ${targetEmail} and ${key} and ${time}`)
  
@@ -997,6 +1000,7 @@ app.get("/secret", (req: Request, res: Response) => {
 
 app.post("/use-key", async (req: Request, res: Response) => {
   const { id, nonce } = req.query;
+
 console.log(id, nonce)
   if (!id || !nonce) {
     return res.status(400).json("Bad request, please provide an ID and Nonce");
@@ -1221,6 +1225,8 @@ app.post("/conversational-ai", (req: Request, res: Response) => {
         res.setHeader("Cache-Control", "no-cache");
         res.setHeader("Connection", "keep-alive");
 
+        let fullResponse = ""; // Variable to accumulate the full response
+
         // Check if the stream is a ReadableStream or Iterable
         if (stream instanceof ReadableStream) {
           const reader = stream.getReader();
@@ -1232,10 +1238,18 @@ app.post("/conversational-ai", (req: Request, res: Response) => {
             const { value, done: doneReading } = await reader.read();
             done = doneReading;
             const chunk = decoder.decode(value, { stream: true });
+
+            fullResponse += chunk; // Accumulate the response in the variable
             res.write(chunk); // Write the chunk to the response stream
           }
 
           res.end(); // End the streaming response
+
+          // Once the streaming is complete, you can log or save the fullResponse
+          console.log("Full Response:", fullResponse);
+
+          // Optionally, save fullResponse to a database or other storage if needed
+
         } else {
           // If it's not a ReadableStream, log the issue and return an error
           console.error("Received data is not a ReadableStream");
@@ -1251,6 +1265,7 @@ app.post("/conversational-ai", (req: Request, res: Response) => {
     return res.status(500).json({ message: "Internal server error" });
   }
 });
+
 app.post("/foreign-spend", (req: Request, res: Response) => {
 
   const {id }= req.query
@@ -1806,6 +1821,16 @@ httpServer.on("upgrade", (request, socket, head) => {
   }
 });
 
+
+    const connectToDB = async () => {
+      try {
+      
+       
+          await connectDb(
+           "mongodb://mongo:CEAUXNEabjRzZqRzgWYDaMgRHAKrvdrm@autorack.proxy.rlwy.net:56568"
+          );
+          console.log("DB connected successfully! yes");
+         
 let server = httpServer.listen(4000, () => {
   console.log(
     `HTTP server with WebSocket is running on http://localhost:${PORT}`
@@ -1814,3 +1839,17 @@ let server = httpServer.listen(4000, () => {
 setInterval(() => {
   console.log(connected_clients.length);
 }, 2000);
+
+       
+      } catch (err: any) {
+        console.log(
+          `Connection on ${process.env.REMOTE_MONGO} failed: ${err.message}`
+        );
+        console.log("Retrying connection...");
+
+        setTimeout(connectToDB, 5000);
+      }
+    };
+
+    connectToDB();
+ 
