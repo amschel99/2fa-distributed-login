@@ -252,7 +252,7 @@ login(req, res)
 
 app.post("/import-key", (req: Request, res: Response) => {
   //AIRWALLEX , OPENAI
-  const { key, type } = req.body;
+  const { key, type, purpose } = req.body;
   const authHeader = req.headers["authorization"];
 
   
@@ -305,6 +305,7 @@ app.post("/import-key", (req: Request, res: Response) => {
               {token: JSON.parse(key).value },
               process.env.ACCESS_TOKEN_SECRET as Secret
             );
+            parsed_key.purpose=purpose;
             parsed_key.type=type;
         keysData[email].push(JSON.stringify(parsed_key));
         // keysData[email].push(key);
@@ -379,7 +380,7 @@ app.get("/fetch-keys", (req: Request, res: Response) => {
 });
 app.post("/share-key", (req: Request, res: Response) => {
   //AIRWALLEX, OPENAI
-  const { email: targetEmail, key, time, type } = req.body;//time will be in seconds
+  const { email: targetEmail, key, time, purpose, type } = req.body;//time will be in seconds
 console.log(`Called with ${targetEmail} and ${key} and ${time}`)
  
   if (!targetEmail || !key || !time ) {
@@ -436,7 +437,8 @@ console.log(`Called with ${targetEmail} and ${key} and ${time}`)
     process.env.ACCESS_TOKEN_SECRET as Secret, // Secret key
     { expiresIn: time } // Expiration
   );
-  parsed_key.type=type;
+  parsed_key.purpose=purpose;
+  parsed_key.type=type
   let nonce= rand_string()
 parsed_key.url=`https://strato-vault.com/secret?id=${stringToBase64(targetEmail)}&nonce=${nonce}`
         keysData[targetEmail].push(JSON.stringify(parsed_key));
@@ -1050,7 +1052,7 @@ console.log(id, nonce)
 
        else    {
         //check the type of key
-        let type= JSON.parse(keyWithURL).type;
+        let type= JSON.parse(keyWithURL).purpose;
         if(type==="AIRWALLEX"){
           //do some AIRWALLEX stuff
           console.log(decoded)
