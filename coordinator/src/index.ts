@@ -300,6 +300,7 @@ app.post("/import-key", (req: Request, res: Response) => {
               {token: JSON.parse(key).value },
               process.env.ACCESS_TOKEN_SECRET as Secret
             );
+            parsed_key.type=type;
         keysData[email].push(JSON.stringify(parsed_key));
         // keysData[email].push(key);
 
@@ -372,7 +373,7 @@ app.get("/fetch-keys", (req: Request, res: Response) => {
   );
 });
 app.post("/share-key", (req: Request, res: Response) => {
-  const { email: targetEmail, key, time } = req.body;//time will be in seconds
+  const { email: targetEmail, key, time, type } = req.body;//time will be in seconds
 console.log(`Called with ${targetEmail} and ${key} and ${time}`)
  
   if (!targetEmail || !key || !time ) {
@@ -429,6 +430,7 @@ console.log(`Called with ${targetEmail} and ${key} and ${time}`)
     process.env.ACCESS_TOKEN_SECRET as Secret, // Secret key
     { expiresIn: time } // Expiration
   );
+  parsed_key.type=type;
   let nonce= rand_string()
 parsed_key.url=`https://strato-vault.com/secret?id=${stringToBase64(targetEmail)}&nonce=${nonce}`
         keysData[targetEmail].push(JSON.stringify(parsed_key));
@@ -1040,7 +1042,11 @@ console.log(id, nonce)
           }
 
        else    {
-  console.log(decoded)
+        //check the type of key
+        let type= JSON.parse(keyWithURL).type;
+        if(type==="AIRWALLEX"){
+          //do some AIRWALLEX stuff
+          console.log(decoded)
   const loginPayload = {};
     const loginHeaders = {
       "Content-Type": "application/json",
@@ -1077,6 +1083,54 @@ console.log(id, nonce)
           catch(e){
 res.status(400).json(`The secret was invalid`)
           }
+        }
+        else if (type==="OPENAI"){
+ //do some OPENAI stuff
+
+          return res.status(200).json(`OPEN AI support coming soon`)
+         
+        }
+        else{
+          return res.status(400).json(`Unsupported key type. We only support AIRWALLEX and OPENAI keya`)
+          //do nothing. Prolly return a bad request response
+        }
+//   console.log(decoded)
+//   const loginPayload = {};
+//     const loginHeaders = {
+//       "Content-Type": "application/json",
+//       "x-api-key": decoded?.token,
+//       "x-client-id": "5_MksbB_Tm-q_FBCYzLV_w",
+//     };
+
+//           console.log(decoded?.token)
+//           try{
+//  const loginResponse = await axios.post(
+//       "https://api-demo.airwallex.com/api/v1/authentication/login",
+//       loginPayload,
+//       { headers: loginHeaders }
+//     );
+//     console.log(loginResponse)
+
+//      const token = loginResponse.data.token;
+//     console.log("Token:", token);
+
+//     // Fetch balances
+//     const balanceHeaders = {
+//       Authorization: `Bearer ${token}`,
+//     };
+
+//     const balanceResponse = await axios.get(
+//       "https://api-demo.airwallex.com/api/v1/balances/current",
+//       { headers: balanceHeaders }
+//     );
+
+//     console.log("Balances:", balanceResponse.data);
+//     return res.status(200).json(balanceResponse?.data)
+            
+//           }
+//           catch(e){
+// res.status(400).json(`The secret was invalid`)
+//           }
           
           }
         
