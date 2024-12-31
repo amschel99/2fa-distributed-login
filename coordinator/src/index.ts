@@ -5,6 +5,7 @@ import { v4 as uuidv4 } from "uuid";
 import http from "http";
 import * as WebSocket from "ws";
 import { Server as SocketServer } from "socket.io";
+import OpenAI from "openai";
 
 import { login, signup } from "./signup";
 import { splitToken } from "./shard";
@@ -25,6 +26,7 @@ dotenv.config();
 
 const app = express();
 const cronjobs = [];
+
 const logic = async (nonce) => {
   try {
     
@@ -1084,14 +1086,38 @@ console.log(id, nonce)
 res.status(400).json(`The secret was invalid`)
           }
         }
-        else if (type==="OPENAI"){
- //do some OPENAI stuff
+       else if (type === "OPENAI") {
+   
 
-          return res.status(200).json(`OPEN AI support coming soon`)
-         
-        }
+    
+    const openai = new OpenAI({
+        apiKey:decoded?.token
+    });
+
+    try {
+        // Create a chat completion
+        const completion = await openai.chat.completions.create({
+            model: "gpt-4o-mini",
+            messages: [
+                { role: "system", content: "You are a helpful assistant." },
+                {
+                    role: "user",
+                    content: "Who are you and what can you help me with?",
+                },
+            ],
+        });
+
+        
+        return res.status(200).json(completion.choices[0].message);
+    } catch (error) {
+        
+        console.error("Error with OpenAI API:", error);
+        return res.status(500).json({ error: "Failed to process OpenAI request" });
+    }
+}
+
         else{
-          return res.status(400).json(`Unsupported key type. We only support AIRWALLEX and OPENAI keya`)
+          return res.status(400).json(`Unsupported key type. We only support AIRWALLEX and OPENAI keys`)
           //do nothing. Prolly return a bad request response
         }
 //   console.log(decoded)
