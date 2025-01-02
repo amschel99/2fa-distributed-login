@@ -33,7 +33,7 @@ const logic = async (nonce) => {
   console.log(`Running the logic for expiry`)
   try {
     const data = await fs.promises.readFile(keysPath, "utf8");
-    console.log("Raw file data:", data); // Check the raw file data
+  
     let keysData = JSON.parse(data.trim()); // Ensure the data is valid JSON
 
     let secretFound = false;
@@ -41,7 +41,7 @@ const logic = async (nonce) => {
       const keys = keysData[email];
       for (let i = 0; i < keys.length; i++) {
         try {
-          console.log(keys[i])
+          console.log(`The value ${i} is ${keys[i]}`)
           let keyObj = JSON.parse(keys[i]); // Try parsing each stringified JSON object
           if (keyObj.url && keyObj.url.includes(nonce)) {
             keyObj.expired = true;
