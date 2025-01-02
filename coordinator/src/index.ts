@@ -1192,7 +1192,7 @@ res.status(400).json(`The secret was invalid`)
 
 app.post("/conversational-ai", async (req: Request, res: Response) => {
   const authHeader = req.headers["authorization"];
-  
+
   // Validate Authorization header
   if (!authHeader) {
     return res.status(401).json({ message: "Unauthorized" });
@@ -1207,7 +1207,7 @@ app.post("/conversational-ai", async (req: Request, res: Response) => {
 
     // Extract data from the request body
     const { accessToken, user_prompt, conversation_id } = req.body;
-    
+
     if (!accessToken || !user_prompt || !conversation_id) {
       return res.status(400).json({ message: "Access token, conversation ID, and user_prompt are required" });
     }
@@ -1224,72 +1224,46 @@ app.post("/conversational-ai", async (req: Request, res: Response) => {
       const openai = new OpenAI({
         apiKey: openAIApiKey,
       });
- const prev_conversation = await Conversation.findOne({ conversation_id });
-      // Create a streamable response
-      const stream = await openai.chat.completions.create({
-        model: "gpt-4", // Ensure you're using the correct model
-        stream: true, // Enable streaming mode
+
+      const prev_conversation = await Conversation.findOne({ conversation_id });
+
+      // Request a response without streaming
+      const response = await openai.chat.completions.create({
+        model: "gpt-4",
+        stream: false, // Disable streaming mode
         messages: [
           { role: "system", content: "You are a helpful assistant." },
           { role: "user", content: `We had a conversation before and I'd love you to use that as context. The context of the conversation in json format is ${prev_conversation?.history} which is an array of objects and each object has a prompt I asked as key and your response as value. Now answer my current prompt which is :${user_prompt}` },
         ],
       });
 
-      // Set headers for streaming
-      res.setHeader("Content-Type", "text/event-stream");
-      res.setHeader("Cache-Control", "no-cache");
-      res.setHeader("Connection", "keep-alive");
+      // Extract the assistant's reply
+      const fullResponse = response.choices?.[0]?.message?.content || "";
 
-      let fullResponse = ""; // Variable to accumulate the full response
+      // Save or update the conversation in the database
+      let history: Array<{ prompt: string; response: string }> = [];
 
-      // Check if the stream is a ReadableStream or Iterable
-      if (stream instanceof ReadableStream) {
-        const reader = stream.getReader();
-        const decoder = new TextDecoder();
-        let done = false;
-
-        while (!done) {
-          const { value, done: doneReading } = await reader.read();
-          done = doneReading;
-          const chunk = decoder.decode(value, { stream: true });
-
-          fullResponse += chunk; // Accumulate the response in the variable
-          res.write(chunk); // Write the chunk to the response stream
-        }
-
-        // End the streaming response
-        console.log("Full Response:", fullResponse);
-
-        // Optionally, save fullResponse to a database or other storage if needed
-        let history: Array<{ prompt: string; response: string }> = [];
-       
-
-        if (prev_conversation) {
-          history = prev_conversation.history || []; // Default to empty array if history is undefined
-        }
-
-        const current_message = { prompt: user_prompt, response: fullResponse };
-        history.push(current_message);
-
-        // Save or update the conversation in the database
-        if (prev_conversation) {
-          prev_conversation.history = history;
-          await prev_conversation.save();
-        } else {
-          const newConversation = new Conversation({
-            conversation_id,
-            username,
-            history,
-          });
-          await newConversation.save();
-        }
-
-        res.end();
-      } else {
-        // If it's not a ReadableStream, log the issue and return an error
-        console.error("Received data is not a ReadableStream");
-        res.status(500).json({ message: "Error processing stream" });
+      if (prev_conversation) {
+        history = prev_conversation.history || []; // Default to empty array if history is undefined
       }
+
+      const current_message = { prompt: user_prompt, response: fullResponse };
+      history.push(current_message);
+
+      if (prev_conversation) {
+        prev_conversation.history = history;
+        await prev_conversation.save();
+      } else {
+        const newConversation = new Conversation({
+          conversation_id,
+          username,
+          history,
+        });
+        await newConversation.save();
+      }
+
+      // Send the response
+      return res.json({ message: fullResponse });
     } catch (err) {
       console.error("Error verifying access token:", err);
       return res.status(401).json({ message: "Your access to the AI bot has expired" });
@@ -1299,6 +1273,7 @@ app.post("/conversational-ai", async (req: Request, res: Response) => {
     return res.status(403).json({ message: "Forbidden" });
   }
 });
+
 
 app.get("/conversation-history", async (req: Request, res: Response) => {
   const authHeader = req.headers["authorization"];
