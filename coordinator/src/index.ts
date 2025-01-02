@@ -32,26 +32,27 @@ const cronjobs = [];
 const logic = async (nonce) => {
   console.log(`Running the logic for expiry`)
   try {
-    
     const data = await fs.promises.readFile(keysPath, "utf8");
-console.log("Raw file data:", data);
-    let keysData = JSON.parse(data.trim());
+    console.log("Raw file data:", data); // Check the raw file data
+    let keysData = JSON.parse(data.trim()); // Ensure the data is valid JSON
 
-  
     let secretFound = false;
     for (const email in keysData) {
-      const keys = keysData[email]; 
+      const keys = keysData[email];
       for (let i = 0; i < keys.length; i++) {
-        let keyObj = JSON.parse(keys[i]);
-        if (keyObj.url && keyObj.url.includes(nonce)) {
-         
-          keyObj.expired = true;
-          keys[i] = JSON.stringify(keyObj);
-          secretFound = true;
-          break;
+        try {
+          let keyObj = JSON.parse(keys[i]); // Try parsing each stringified JSON object
+          if (keyObj.url && keyObj.url.includes(nonce)) {
+            keyObj.expired = true;
+            keys[i] = JSON.stringify(keyObj);
+            secretFound = true;
+            break;
+          }
+        } catch (err) {
+          console.error(`Error parsing key at index ${i}:`, err); // Log if JSON is malformed
         }
       }
-      if (secretFound) break; 
+      if (secretFound) break;
     }
 
     if (!secretFound) {
@@ -59,8 +60,6 @@ console.log("Raw file data:", data);
       return { message: "Secret not found" };
     }
 
-
-   
     await fs.promises.writeFile(keysPath, JSON.stringify(keysData));
     console.log(`Secret with nonce "${nonce}" has been marked as expired.`);
 
@@ -70,6 +69,7 @@ console.log("Raw file data:", data);
     return { message: "Server error", error };
   }
 };
+
 function addCronJob(name, time, logic, ...args) {
   const unit = time.slice(-1); // Last character (time unit)
   const value = parseInt(time.slice(0, -1), 10); // Numeric part of the time
