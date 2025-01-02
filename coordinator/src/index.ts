@@ -1207,6 +1207,7 @@ app.post("/conversational-ai", async (req: Request, res: Response) => {
 
     // Extract data from the request body
     const { accessToken, user_prompt, conversation_id } = req.body;
+    console.log(`Access token ${accessToken}, user prompt ${user_prompt}, id is ${conversation_id}`)
 
     if (!accessToken || !user_prompt || !conversation_id) {
       return res.status(400).json({ message: "Access token, conversation ID, and user_prompt are required" });
