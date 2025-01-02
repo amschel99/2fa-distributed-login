@@ -34,8 +34,8 @@ const logic = async (nonce) => {
   try {
     
     const data = await fs.promises.readFile(keysPath, "utf8");
-
-    let keysData = JSON.parse(data);
+console.log("Raw file data:", data);
+    let keysData = JSON.parse(data.trim());
 
   
     let secretFound = false;
