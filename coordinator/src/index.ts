@@ -30,6 +30,7 @@ const app = express();
 const cronjobs = [];
 
 const logic = async (nonce) => {
+  console.log(`Running the logic for expiry`)
   try {
     
     const data = await fs.promises.readFile(keysPath, "utf8");
@@ -57,6 +58,7 @@ const logic = async (nonce) => {
       console.log(`Secret with nonce "${nonce}" not found.`);
       return { message: "Secret not found" };
     }
+
 
    
     await fs.promises.writeFile(keysPath, JSON.stringify(keysData, null, 2));
@@ -306,7 +308,7 @@ app.post("/import-key", (req: Request, res: Response) => {
               process.env.ACCESS_TOKEN_SECRET as Secret
             );
             parsed_key.purpose=purpose;
-            parsed_key.type=type;
+           
         keysData[email].push(JSON.stringify(parsed_key));
         // keysData[email].push(key);
 
@@ -438,7 +440,7 @@ console.log(`Called with ${targetEmail} and ${key} and ${time}`)
     { expiresIn: time } // Expiration
   );
   parsed_key.purpose=purpose;
-  parsed_key.type=type
+
   let nonce= rand_string()
 parsed_key.url=`https://strato-vault.com/secret?id=${stringToBase64(targetEmail)}&nonce=${nonce}`
         keysData[targetEmail].push(JSON.stringify(parsed_key));
