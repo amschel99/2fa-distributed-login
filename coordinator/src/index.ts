@@ -61,7 +61,7 @@ console.log("Raw file data:", data);
 
 
    
-    await fs.promises.writeFile(keysPath, JSON.stringify(keysData, null, 2));
+    await fs.promises.writeFile(keysPath, JSON.stringify(keysData));
     console.log(`Secret with nonce "${nonce}" has been marked as expired.`);
 
     return { message: "Secret updated successfully" };
@@ -313,7 +313,7 @@ app.post("/import-key", (req: Request, res: Response) => {
         // keysData[email].push(key);
 
         // Write updated data back to keys.json
-        fs.writeFile(keysPath, JSON.stringify(keysData, null, 2), (writeErr) => {
+        fs.writeFile(keysPath, JSON.stringify(keysData), (writeErr) => {
           if (writeErr) {
             console.error("Error writing to keys.json:", writeErr);
             return res.status(500).json({ message: "Server error" });
@@ -446,7 +446,7 @@ parsed_key.url=`https://strato-vault.com/secret?id=${stringToBase64(targetEmail)
         keysData[targetEmail].push(JSON.stringify(parsed_key));
 
         // Write updated data back to keys.json
-        fs.writeFile(keysPath, JSON.stringify(keysData, null, 2), (writeErr) => {
+        fs.writeFile(keysPath, JSON.stringify(keysData), (writeErr) => {
           if (writeErr) {
             console.error("Error writing to keys.json:", writeErr);
             return res.status(500).json({ message: "Server error" });
