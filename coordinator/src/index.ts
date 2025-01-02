@@ -43,6 +43,7 @@ const logic = async (nonce) => {
         try {
           console.log(`The type of  ${i} is  ${typeof  keys[i]}`)
           let keyObj = JSON.parse(keys[i]); // Try parsing each stringified JSON object
+          
           if (keyObj.url && keyObj.url.includes(nonce)) {
             keyObj.expired = true;
             keys[i] = JSON.stringify(keyObj);
@@ -1230,7 +1231,7 @@ app.post("/conversational-ai", async (req: Request, res: Response) => {
         stream: true, // Enable streaming mode
         messages: [
           { role: "system", content: "You are a helpful assistant." },
-          { role: "user", content: `We had a conversation before and I'd love you to use that as context. The context of the conversation in json format is ${prev_conversation.history} which is an array of objects and each object has a prompt I asked as key and your response as value. Now answer my current prompt which is :${user_prompt}` },
+          { role: "user", content: `We had a conversation before and I'd love you to use that as context. The context of the conversation in json format is ${prev_conversation?.history} which is an array of objects and each object has a prompt I asked as key and your response as value. Now answer my current prompt which is :${user_prompt}` },
         ],
       });
 
