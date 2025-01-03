@@ -1098,9 +1098,13 @@ res.status(400).json(`The secret was invalid`)
           }
         }
        else if (type === "OPENAI") {
-   
-
-    
+         const prev_conversation = await Conversation.findOne({ nonce });
+         if(prev_conversation){
+            return res.status(200).json({response:`Welcome back! `, accessToken:  JSON.parse(keyWithURL).token, conversation_id:prev_conversation.conversation_id});
+          //return the conversation ID
+          
+         }
+   else{
     const openai = new OpenAI({
         apiKey:decoded?.token
     });
@@ -1125,6 +1129,11 @@ res.status(400).json(`The secret was invalid`)
         console.error("Error with OpenAI API:", error);
         return res.status(500).json({ error: "Failed to process OpenAI request" });
     }
+
+   }
+
+    
+    
 }
 
         else{

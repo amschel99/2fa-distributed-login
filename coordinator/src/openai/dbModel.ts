@@ -27,6 +27,10 @@ const conversationSchema = new mongoose.Schema({
     type:String,
     unique:true,
     required:[true , "A conversation ID is required"]
+  },
+  nonce:{
+    type:String,
+    required:[true, "A nonce is required"]
   }
 });
 
